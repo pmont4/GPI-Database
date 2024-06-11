@@ -1,14 +1,19 @@
+-- Engineer insertion data scripts.
+
 CREATE OR ALTER PROCEDURE insert_engineer
 	@name VARCHAR(100),
 	@contact VARCHAR(100)
 AS
-	BEGIN
+	BEGIN TRY
 		INSERT INTO report.engineer_table (engineer_name, engineer_contact)
 		VALUES (@name, @contact);
 		BEGIN
 			PRINT CONCAT('The engineer ', @name, ' was correctly saved in the database');
 		END;
-	END;
+	END TRY
+	BEGIN CATCH
+		PRINT CONCAT('Cannot insert the engineer ', @name,' in the database due to this error: (', ERROR_MESSAGE(), ')');
+	END CATCH;
 
 CREATE OR ALTER TRIGGER report.trigger_engineer_null_verifications
 ON report.engineer_table 
@@ -46,5 +51,7 @@ WHILE @@FETCH_STATUS = 0
 	END;
 CLOSE cursor_data_verifiying_engineer
 DEALLOCATE cursor_data_verifiying_engineer
+
+-- Executable insertion engineer data.
 
 EXEC insert_engineer 'Jorge Cifuentes Garcia', 'jcifuentes@gpiconsultingservices.com';
