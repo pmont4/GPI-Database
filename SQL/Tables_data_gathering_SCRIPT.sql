@@ -38,8 +38,23 @@ CREATE OR ALTER PROCEDURE view_table
 				PRINT CONCAT('The table with name ', @Table, ' was not found');
 		END;
 
+-- Engineer executable
+EXEC view_table 'e';
+-- Client executable
+EXEC view_table 'c';
+-- Plant executable
+EXEC view_table 'p';
+-- Type location executable
+EXEC view_table 'tl';
+-- Type location class executable
+EXEC view_table 'tlc';
 -- Merchandise classification executable
 EXEC view_table 'mc';
 -- Hydrant protection class executable
 EXEC view_table 'hpc';
-	
+-- Hydrant standpipe type executable
+EXEC view_table 'hst';
+-- Hydrant standpipe class executable
+EXEC view_table 'hsc';
+
+SELECT DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'plant_table';

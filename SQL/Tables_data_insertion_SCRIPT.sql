@@ -204,6 +204,32 @@ EXEC report.proc_insert_hydrant_standpipe_class 'I';
 EXEC report.proc_insert_hydrant_standpipe_class 'II';
 EXEC report.proc_insert_hydrant_standpipe_class 'III';
 
+-- Type location classification data
+--
+CREATE OR ALTER PROCEDURE report.proc_type_location_class
+	@name VARCHAR(100)
+AS
+	BEGIN TRY
+		BEGIN
+			IF (@name != '')
+				INSERT INTO report.type_location_classification_table(type_location_class_name)
+				VALUES (@name);
+				PRINT CONCAT('The type location class "', @name, '" was correctly saved in the database');
+			IF (@name = '' OR @name IS NULL)
+				PRINT 'You cannot left the type location class name in blank.';
+		END;
+	END TRY
+	BEGIN CATCH
+		PRINT CONCAT('Cannot insert the type location class  "', @name,'" in the database due to this error: (', ERROR_MESSAGE(), ')');
+	END CATCH;
+--
+-- Executable insertion type location class data
+
+EXEC report.proc_type_location_class 'Industrial';
+EXEC report.proc_type_location_class 'Comercial';
+EXEC report.proc_type_location_class 'Residential';
+EXEC report.proc_type_location_class 'Rural';
+
 -- Plant table date scripts
 --
 CREATE OR ALTER PROCEDURE report.proc_insert_plant
@@ -214,6 +240,7 @@ CREATE OR ALTER PROCEDURE report.proc_insert_plant
 	@state AS VARCHAR(100),
 	@construction_year AS INT,
 	@operation_startup_year AS INT,
+	@type_location AS VARCHAR(150),
 	@address AS VARCHAR(100),
 	@latitude AS VARCHAR(30),
 	@longitude AS VARCHAR(30),
@@ -243,7 +270,12 @@ AS
 														plant_meters_above_sea_level)
 														VALUES (@account_name, @name, @continent, @country, @state, @date_construction_year, @date_operation_startup,
 																@address, @latitude, @longitude, @meters_above_sea_level);
+						BEGIN
+							IF (@type_location IS NOT NULL)
+								
+						END;
 						PRINT CONCAT('The plant "', @name, '" was correctly saved in the database');
+
 					END;
 				END;
 			ELSE
@@ -254,4 +286,5 @@ AS
 		PRINT CONCAT('Cannot insert the plant  "', @name,'" in the database due to this error: (', ERROR_MESSAGE(), ')');
 	END CATCH;
 
-EXEC report.proc_insert_plant 'TATA - Accesorios Globales, S.A.', null, 'C.A.', 'Guatemala', 'Guatemala', 1985, 1985, '2ª. Calle 1-11 y 1-25 Zona 8, Granjas Gerona, San Miguel Petapa, Guatemala, C.A.', 14.533944, -90.593765, 1274;
+DELETE FROM report.plant_table WHERE id_plant = 1018;
+EXEC report.proc_insert_plant 'TATA - Accesorios Globales, S.A.', null, 'C.A.', 'Guatemala', 'Guatemala', 1985, 1985, 'Industrial,Residential', '2ª. Calle 1-11 y 1-25 Zona 8, Granjas Gerona, San Miguel Petapa, Guatemala, C.A.', 14.533944, -90.593765, 1274;
