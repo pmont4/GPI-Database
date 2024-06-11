@@ -38,5 +38,6 @@ CREATE OR ALTER PROCEDURE view_table
 				PRINT CONCAT('The table with name ', @Table, ' was not found');
 		END;
 
-EXEC view_table 'tl';
+EXEC view_table 'e';
+
 	
