@@ -29,4 +29,22 @@ AS
 		END;
 	END;
 
-EXEC insert_engineer 'Juan Jose Lira', '';
+DECLARE @engineer_contact AS VARCHAR(100)
+DECLARE @engineer_id AS INT
+
+DECLARE cursor_data_verifiying_engineer CURSOR DYNAMIC FORWARD_ONLY
+	FOR 
+		SELECT e.id_engineer, e.engineer_contact FROM report.engineer_table e
+		FOR UPDATE OF engineer_contact
+OPEN cursor_data_verifiying_engineer
+FETCH NEXT FROM cursor_data_verifiying_engineer INTO @engineer_id, @engineer_contact
+WHILE @@FETCH_STATUS = 0
+	BEGIN
+		IF (@engineer_contact = '')
+			UPDATE report.engineer_table SET engineer_contact = NULL WHERE CURRENT OF cursor_data_verifiying_engineer
+		FETCH NEXT FROM cursor_data_verifiying_engineer INTO @engineer_id, @engineer_contact
+	END;
+CLOSE cursor_data_verifiying_engineer
+DEALLOCATE cursor_data_verifiying_engineer
+
+EXEC insert_engineer 'Jorge Cifuentes Garcia', 'jcifuentes@gpiconsultingservices.com';
