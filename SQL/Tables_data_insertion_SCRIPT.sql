@@ -5,11 +5,12 @@ CREATE OR ALTER PROCEDURE report.proc_insert_engineer
 	@contact VARCHAR(100)
 AS
 	BEGIN TRY
-		INSERT INTO report.engineer_table (engineer_name, engineer_contact)
-		VALUES (@name, @contact);
-		BEGIN
+		IF (@name != '')
+			INSERT INTO report.engineer_table (engineer_name, engineer_contact)
+			VALUES (@name, @contact);
 			PRINT CONCAT('The engineer "', @name, '" was correctly saved in the database');
-		END;
+		IF (@name = '' OR @name IS NULL)
+			PRINT 'You cannot left the engineer name in blank.';
 	END TRY
 	BEGIN CATCH
 		PRINT CONCAT('Cannot insert the engineer "', @name,'" in the database due to this error: (', ERROR_MESSAGE(), ')');
@@ -62,11 +63,12 @@ CREATE OR ALTER PROCEDURE report.proc_insert_client
 	@name VARCHAR(100)
 AS
 	BEGIN TRY
-		INSERT INTO report.client_table(client_name)
-		VALUES (@name);
-		BEGIN
+		IF (@name != '')
+			INSERT INTO report.client_table(client_name)
+			VALUES (@name);
 			PRINT CONCAT('The client "', @name, '" was correctly saved in the database');
-		END;
+		IF (@name = '' OR @name IS NULL)
+			PRINT 'You cannot left the client name in blank.';
 	END TRY
 	BEGIN CATCH
 		PRINT CONCAT('Cannot insert the client "', @name,'" in the database due to this error: (', ERROR_MESSAGE(), ')');
@@ -75,3 +77,77 @@ AS
 -- Executable insertion client data.
 
 EXEC report.proc_insert_client 'Seguros Universales S.A.';
+
+-- Capacity type insertion data scripts.
+--
+CREATE OR ALTER PROCEDURE report.proc_insert_capacity_type
+	@name VARCHAR(100)
+AS
+	BEGIN TRY
+		BEGIN
+			IF (@name != '')
+				INSERT INTO report.capacity_type_table(capacity_type_name)
+				VALUES (@name);
+				PRINT CONCAT('The capacity type "', @name, '" was correctly saved in the database');
+			IF (@name = '' OR @name IS NULL)
+				PRINT 'You cannot left the capacity type name in blank.';
+		END;
+	END TRY
+	BEGIN CATCH
+		PRINT CONCAT('Cannot insert the capacity type "', @name,'" in the database due to this error: (', ERROR_MESSAGE(), ')');
+	END CATCH;
+--
+-- Executable insertion capacity type data
+
+EXEC report.proc_insert_capacity_type 'Tons / year';
+
+-- Merchandise class insertion data scripts.
+--
+CREATE OR ALTER PROCEDURE report.proc_insert_merchandise_class
+	@name VARCHAR(100)
+AS
+	BEGIN TRY
+		BEGIN
+			IF (@name != '')
+				INSERT INTO report.merchandise_classification_type_table(merchandise_classification_type_name)
+				VALUES (@name);
+				PRINT CONCAT('The merchandise class "', @name, '" was correctly saved in the database');
+			IF (@name = '' OR @name IS NULL)
+				PRINT 'You cannot left the merchandise class name in blank.';
+		END;
+	END TRY
+	BEGIN CATCH
+		PRINT CONCAT('Cannot insert the merchandise class "', @name,'" in the database due to this error: (', ERROR_MESSAGE(), ')');
+	END CATCH;
+--
+-- Executable insertion merchandise class data
+
+EXEC report.proc_insert_merchandise_class 'I';
+EXEC report.proc_insert_merchandise_class 'II';
+EXEC report.proc_insert_merchandise_class 'III';
+EXEC report.proc_insert_merchandise_class 'IV';
+
+-- Hydrant protection clas data scripts
+--
+CREATE OR ALTER PROCEDURE report.proc_insert_hydrant_protection_class
+	@name VARCHAR(100)
+AS
+	BEGIN TRY
+		BEGIN
+			IF (@name != '')
+				INSERT INTO report.hydrant_protection_classification_table(hydrant_protection_classification_name)
+				VALUES (@name);
+				PRINT CONCAT('The hydrant protection class "', @name, '" was correctly saved in the database');
+			IF (@name = '' OR @name IS NULL)
+				PRINT 'You cannot left the hydrant protection class name in blank.';
+		END;
+	END TRY
+	BEGIN CATCH
+		PRINT CONCAT('Cannot insert the hydrant protection class "', @name,'" in the database due to this error: (', ERROR_MESSAGE(), ')');
+	END CATCH;
+--
+-- Executable insertion hydrant protection class data
+
+EXEC report.proc_insert_hydrant_protection_class 'Major fires';
+EXEC report.proc_insert_hydrant_protection_class 'Minor fires';
+EXEC report.proc_insert_hydrant_protection_class 'Major & Minor fires';
