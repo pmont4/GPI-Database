@@ -38,6 +38,8 @@ CREATE OR ALTER PROCEDURE view_table
 				PRINT CONCAT('The table with name ', @Table, ' was not found');
 		END;
 
+-- Merchandise classification executable
 EXEC view_table 'mc';
-EXEC view_table 'hpc';s
+-- Hydrant protection class executable
+EXEC view_table 'hpc';
 	
