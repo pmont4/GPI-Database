@@ -1,3 +1,5 @@
+USE gpi_consulting_services_reports_db;
+
 CREATE OR ALTER PROCEDURE view_table
 	@Table VARCHAR(100)
 	AS
@@ -57,4 +59,5 @@ EXEC view_table 'hst';
 -- Hydrant standpipe class executable
 EXEC view_table 'hsc';
 
-SELECT DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'plant_table';
+SELECT C.COLUMN_NAME, C.DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'plant_table';
+SELECT C.COLUMN_NAME, C.DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'report_table';

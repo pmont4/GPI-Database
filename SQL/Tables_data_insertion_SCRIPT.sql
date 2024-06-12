@@ -1,3 +1,5 @@
+USE gpi_consulting_services_reports_db;
+
 -- Engineer insertion data scripts.
 --
 CREATE OR ALTER PROCEDURE report.proc_insert_engineer
@@ -34,24 +36,6 @@ AS
 				WHERE id_engineer = @id;
 		END;
 	END;
-
-DECLARE @engineer_contact AS VARCHAR(100)
-DECLARE @engineer_id AS INT
-
-DECLARE cursor_data_verifiying_engineer CURSOR DYNAMIC FORWARD_ONLY
-	FOR 
-		SELECT e.id_engineer, e.engineer_contact FROM report.engineer_table e
-		FOR UPDATE OF engineer_contact
-OPEN cursor_data_verifiying_engineer
-FETCH NEXT FROM cursor_data_verifiying_engineer INTO @engineer_id, @engineer_contact
-WHILE @@FETCH_STATUS = 0
-	BEGIN
-		IF (@engineer_contact = '')
-			UPDATE report.engineer_table SET engineer_contact = NULL WHERE CURRENT OF cursor_data_verifiying_engineer
-		FETCH NEXT FROM cursor_data_verifiying_engineer INTO @engineer_id, @engineer_contact
-	END;
-CLOSE cursor_data_verifiying_engineer
-DEALLOCATE cursor_data_verifiying_engineer
 --
 -- Executable insertion engineer data.
 
@@ -240,6 +224,7 @@ CREATE OR ALTER PROCEDURE report.proc_insert_plant
 	@state AS VARCHAR(100),
 	@construction_year AS INT,
 	@operation_startup_year AS INT,
+	@certifications AS TEXT NULL,
 	@type_location AS VARCHAR(150),
 	@address AS VARCHAR(100),
 	@latitude AS VARCHAR(30),
@@ -267,12 +252,34 @@ AS
 					BEGIN
 						INSERT INTO report.plant_table (plant_account_name, plant_name, plant_continent, plant_country, plant_country_state, 
 														plant_construction_year, plant_operation_startup_year, plant_address, plant_latitude, plant_longitude, 
-														plant_meters_above_sea_level)
+														plant_meters_above_sea_level, plant_certifications)
 														VALUES (@account_name, @name, @continent, @country, @state, @date_construction_year, @date_operation_startup,
-																@address, @latitude, @longitude, @meters_above_sea_level);
+																@address, @latitude, @longitude, @meters_above_sea_level, @certifications);
 						BEGIN
 							IF (@type_location IS NOT NULL)
-								
+								DECLARE @val AS VARCHAR(50);
+								DECLARE cur CURSOR DYNAMIC FORWARD_ONLY
+											FOR SELECT * FROM STRING_SPLIT(@type_location, ',');
+								OPEN cur
+								FETCH NEXT FROM cur INTO @val;
+								WHILE @@FETCH_STATUS = 0
+									BEGIN TRY
+										IF EXISTS(SELECT type_location_class_name FROM report.type_location_classification_table 
+																					WHERE type_location_class_name = @val)
+											INSERT INTO report.type_location_table (id_plant, id_type_location_class)
+											VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
+													(SELECT id_type_location_class FROM report.type_location_classification_table WHERE type_location_class_name = @val));
+										ELSE
+											PRINT CONCAT('No values found in type location table for "', @val, '"');
+									FETCH NEXT FROM cur INTO @val;
+									END TRY
+									BEGIN CATCH
+										PRINT CONCAT('An error ocurred while trying to insert data in type location table (', ERROR_MESSAGE(), ')');
+										CLOSE cur;
+										DEALLOCATE cur;
+									END CATCH;
+								CLOSE cur;
+								DEALLOCATE cur;
 						END;
 						PRINT CONCAT('The plant "', @name, '" was correctly saved in the database');
 
@@ -286,5 +293,46 @@ AS
 		PRINT CONCAT('Cannot insert the plant  "', @name,'" in the database due to this error: (', ERROR_MESSAGE(), ')');
 	END CATCH;
 
-DELETE FROM report.plant_table WHERE id_plant = 1018;
-EXEC report.proc_insert_plant 'TATA - Accesorios Globales, S.A.', null, 'C.A.', 'Guatemala', 'Guatemala', 1985, 1985, 'Industrial,Residential', '2ª. Calle 1-11 y 1-25 Zona 8, Granjas Gerona, San Miguel Petapa, Guatemala, C.A.', 14.533944, -90.593765, 1274;
+CREATE OR ALTER TRIGGER trigger_null_verifiying_plant_table
+ON report.plant_table
+AFTER INSERT AS
+	DECLARE
+		@id AS INT = (SELECT id_plant FROM inserted),
+		@plant_address AS VARCHAR(100),
+		@plant_certification AS VARCHAR(200),
+		@plant_latitude AS VARCHAR(30),
+		@plant_longitude AS VARCHAR(30),
+		@plant_meters_above_sea_level AS INT
+	DECLARE cur CURSOR DYNAMIC FORWARD_ONLY
+				FOR SELECT i.plant_address, i.plant_certifications, i.plant_latitude, i.plant_longitude, i.plant_meters_above_sea_level FROM inserted i;
+	OPEN cur;
+	FETCH NEXT FROM cur INTO @plant_address, @plant_certification, @plant_latitude, @plant_longitude, @plant_meters_above_sea_level
+	WHILE @@FETCH_STATUS = 0
+		BEGIN TRY
+			IF (@plant_address IS NULL)
+				SET @plant_address = 'No address';
+			IF (@plant_certification IS NULL)
+				SET @plant_certification = 'No certifications';
+			IF (@plant_latitude IS NULL)
+				SET @plant_latitude = 'No latitude';
+			IF (@plant_longitude IS NULL)
+				SET @plant_longitude = 'No longitude';
+			IF (@plant_meters_above_sea_level IS NULL)
+				SET @plant_meters_above_sea_level = 0;
+			UPDATE plant_table SET plant_address = @plant_address, plant_certifications = @plant_certification, plant_latitude = @plant_latitude, 
+									plant_longitude = @plant_longitude, plant_meters_above_sea_level = @plant_meters_above_sea_level
+									WHERE id_plant = @id;
+										
+			FETCH NEXT FROM cur INTO @plant_address, @plant_certification, @plant_latitude, @plant_longitude, @plant_meters_above_sea_level
+		END TRY
+		BEGIN CATCH
+			PRINT CONCAT('An error ocurred while attempting to update the plant table (', ERROR_MESSAGE(), ')');
+			CLOSE cur;
+			DEALLOCATE cur;
+		END CATCH;
+	CLOSE cur;
+	DEALLOCATE cur;
+
+EXEC report.proc_insert_plant 'TATA - Accesorios Globales, S.A.', null, 'C.A.', 'Guatemala', 'Guatemala', 1985, 1985, null, 'Industrial,Residential', '2ª. Calle 1-11 y 1-25 Zona 8, Granjas Gerona, San Miguel Petapa, Guatemala, C.A.', 14.533944, -90.593765, 1274;
+EXEC report.proc_insert_plant 'Sidegua Steel Park', null, 'C.A.', 'Guatemala', 'Escuintla', 1991, 1994, 'ASTM, COGUANOR, ACI, INTECO', 'Industrial,Rural', 'Km 65.5 CA9-A Highway, Masagua, Escuintla, Guatemala, C.A.', 14.533944, -90.593765, 1274;
+EXEC report.proc_insert_plant 'Industria de Tubos y Perfiles, S.A. - INTUPERSA', null, 'C.A.', 'Guatemala', 'Guatemala', 1961, 1961, null, 'Industrial,Residential', '9ª. Avenida 3-17 Z.2 Mixco, Colonia Alvarado, Guatemala, Guatemala', 14.676888, -90.62747, null;
