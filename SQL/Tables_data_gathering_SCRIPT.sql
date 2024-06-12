@@ -36,6 +36,10 @@ CREATE OR ALTER PROCEDURE view_table
 				SELECT tlc.* FROM report.type_location_classification_table tlc ORDER BY tlc.id_type_location_class ASC;
 			ELSE IF (@Table = 'type location' OR @Table = 'tl')
 				SELECT tl.* FROM report.type_location_table	tl ORDER BY tl.id_type_location ASC;
+			ELSE IF (@Table = 'business turnover class' OR @Table = 'btc')
+				SELECT btc.* FROM report.business_turnover_class_table btc ORDER BY btc.id_business_turnover ASC;
+			ELSE IF (@Table = 'business turnover' OR @Table = 'bt')
+				SELECT bt.* FROM report.business_turnover_table bt ORDER BY bt.id_business_turnover_table ASC;
 			ELSE
 				PRINT CONCAT('The table with name ', @Table, ' was not found');
 		END;
@@ -58,6 +62,10 @@ EXEC view_table 'hpc';
 EXEC view_table 'hst';
 -- Hydrant standpipe class executable
 EXEC view_table 'hsc';
+-- Business turnover class executable
+EXEC view_table 'btc';
+-- Business turnover executable
+EXEC view_table 'bt';
 
 SELECT C.COLUMN_NAME, C.DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'plant_table';
 SELECT C.COLUMN_NAME, C.DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'report_table';

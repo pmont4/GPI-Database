@@ -225,6 +225,9 @@ CREATE OR ALTER PROCEDURE report.proc_insert_plant
 	@construction_year AS INT,
 	@operation_startup_year AS INT,
 	@certifications AS TEXT NULL,
+	@business_turnover AS VARCHAR(50),
+	@specific_turnover AS VARCHAR(150),
+	@merchandise_classification AS VARCHAR(8),
 	@type_location AS VARCHAR(150),
 	@address AS VARCHAR(100),
 	@latitude AS VARCHAR(30),
@@ -234,9 +237,10 @@ AS
 	BEGIN TRY
 		DECLARE
 			@date_construction_year AS DATETIME,
-			@date_operation_startup AS DATETIME
+			@date_operation_startup AS DATETIME,
+			@id_merchandise AS INT
 		BEGIN
-			IF (@account_name != '' AND @continent != '' AND @country != '' AND @state != '')
+			IF (@account_name != '' AND @continent != '' AND @country != '' AND @state != '' AND @business_turnover != '' AND @specific_turnover != '')
 				BEGIN
 					IF (@name IS NULL)
 						SET @name = @account_name;
@@ -250,39 +254,54 @@ AS
 						SET @date_construction_year = NULL;
 
 					BEGIN
-						INSERT INTO report.plant_table (plant_account_name, plant_name, plant_continent, plant_country, plant_country_state, 
-														plant_construction_year, plant_operation_startup_year, plant_address, plant_latitude, plant_longitude, 
-														plant_meters_above_sea_level, plant_certifications)
-														VALUES (@account_name, @name, @continent, @country, @state, @date_construction_year, @date_operation_startup,
-																@address, @latitude, @longitude, @meters_above_sea_level, @certifications);
-						BEGIN
-							IF (@type_location IS NOT NULL)
-								DECLARE @val AS VARCHAR(50);
-								DECLARE cur CURSOR DYNAMIC FORWARD_ONLY
-											FOR SELECT * FROM STRING_SPLIT(@type_location, ',');
-								OPEN cur
-								FETCH NEXT FROM cur INTO @val;
-								WHILE @@FETCH_STATUS = 0
-									BEGIN TRY
-										IF EXISTS(SELECT type_location_class_name FROM report.type_location_classification_table 
-																					WHERE type_location_class_name = @val)
-											INSERT INTO report.type_location_table (id_plant, id_type_location_class)
-											VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
-													(SELECT id_type_location_class FROM report.type_location_classification_table WHERE type_location_class_name = @val));
-										ELSE
-											PRINT CONCAT('No values found in type location table for "', @val, '"');
+						IF EXISTS(SELECT business_turnover_name FROM report.business_turnover_class_table WHERE business_turnover_name = @business_turnover)
+							BEGIN
+								IF EXISTS(SELECT id_merchandise_classification_type FROM report.merchandise_classification_type_table 
+																				WHERE merchandise_classification_type_name = @merchandise_classification)
+									SET @id_merchandise = (SELECT id_merchandise_classification_type FROM report.merchandise_classification_type_table
+																									WHERE merchandise_classification_type_name = @merchandise_classification);
+								ELSE
+									SET @id_merchandise = 0;
+							END;
+							INSERT INTO report.plant_table (plant_account_name, plant_name, plant_continent, plant_country, plant_country_state, 
+															plant_construction_year, plant_operation_startup_year, plant_address, plant_latitude, plant_longitude, 
+															plant_meters_above_sea_level, plant_certifications, plant_business_specific_turnover, plant_merchandise_class)
+															VALUES (@account_name, @name, @continent, @country, @state, @date_construction_year, @date_operation_startup,
+																	@address, @latitude, @longitude, @meters_above_sea_level, @certifications, @specific_turnover, @id_merchandise);
+							BEGIN
+								IF (@type_location IS NOT NULL)
+									DECLARE @val AS VARCHAR(50);
+									DECLARE cur CURSOR DYNAMIC FORWARD_ONLY
+												FOR SELECT * FROM STRING_SPLIT(@type_location, ',');
+									OPEN cur
 									FETCH NEXT FROM cur INTO @val;
-									END TRY
-									BEGIN CATCH
-										PRINT CONCAT('An error ocurred while trying to insert data in type location table (', ERROR_MESSAGE(), ')');
-										CLOSE cur;
-										DEALLOCATE cur;
-									END CATCH;
-								CLOSE cur;
-								DEALLOCATE cur;
-						END;
-						PRINT CONCAT('The plant "', @name, '" was correctly saved in the database');
-
+									WHILE @@FETCH_STATUS = 0
+										BEGIN TRY
+											IF EXISTS(SELECT type_location_class_name FROM report.type_location_classification_table 
+																						WHERE type_location_class_name = @val)
+												INSERT INTO report.type_location_table (id_plant, id_type_location_class)
+												VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
+														(SELECT id_type_location_class FROM report.type_location_classification_table WHERE type_location_class_name = @val));
+											ELSE
+												PRINT CONCAT('No values found in type location table for "', @val, '"');
+										FETCH NEXT FROM cur INTO @val;
+										END TRY
+										BEGIN CATCH
+											PRINT CONCAT('An error ocurred while trying to insert data in type location table (', ERROR_MESSAGE(), ')');
+											CLOSE cur;
+											DEALLOCATE cur;
+										END CATCH;
+									CLOSE cur;
+									DEALLOCATE cur;
+							END;
+							BEGIN
+								INSERT INTO report.business_turnover_table (id_plant, id_business_turnover)
+								VALUES ((SELECT MAX(id_plant) FROM report.plant_table),
+										(SELECT id_business_turnover FROM report.business_turnover_class_table WHERE business_turnover_name = @business_turnover))
+							END;
+							PRINT CONCAT('The plant "', @name, '" was correctly saved in the database');
+						IF NOT EXISTS (SELECT business_turnover_name FROM report.business_turnover_class_table WHERE business_turnover_name = @business_turnover)
+							PRINT CONCAT('The business turnover"', @business_turnover ,'" does not match with any existing business turnover on the table');
 					END;
 				END;
 			ELSE
@@ -333,6 +352,35 @@ AFTER INSERT AS
 	CLOSE cur;
 	DEALLOCATE cur;
 
-EXEC report.proc_insert_plant 'TATA - Accesorios Globales, S.A.', null, 'C.A.', 'Guatemala', 'Guatemala', 1985, 1985, null, 'Industrial,Residential', '2ª. Calle 1-11 y 1-25 Zona 8, Granjas Gerona, San Miguel Petapa, Guatemala, C.A.', 14.533944, -90.593765, 1274;
-EXEC report.proc_insert_plant 'Sidegua Steel Park', null, 'C.A.', 'Guatemala', 'Escuintla', 1991, 1994, 'ASTM, COGUANOR, ACI, INTECO', 'Industrial,Rural', 'Km 65.5 CA9-A Highway, Masagua, Escuintla, Guatemala, C.A.', 14.533944, -90.593765, 1274;
+UPDATE report.plant_table SET plant_business_specific_turnover = 'Manufacture of natural and synthetic leather belts for export' WHERE id_plant = 1020;
+INSERT INTO report.business_turnover_table (id_plant, id_business_turnover)
+VALUES (1020, 1000);
+
+DELETE FROM report.plant_table WHERE id_plant = 1020;
+
+EXEC report.proc_insert_plant 'TATA - Accesorios Globales, S.A.', null, 'C.A.', 'Guatemala', 'Guatemala', 1985, 1985, null, 'Production', 'Manufacture of natural and synthetic leather belts for export', 'III', 'Industrial,Residential', '2ª. Calle 1-11 y 1-25 Zona 8, Granjas Gerona, San Miguel Petapa, Guatemala, C.A.', 14.533944, -90.593765, 1274;
+EXEC report.proc_insert_plant 'Sidegua Steel Park', null, 'C.A.', 'Guatemala', 'Escuintla', 1991, 1994, 'ASTM, COGUANOR, ACI, INTECO', 'Production', 'Steel Casting','Industrial,Rural', 'Km 65.5 CA9-A Highway, Masagua, Escuintla, Guatemala, C.A.', 14.533944, -90.593765, 1274;
 EXEC report.proc_insert_plant 'Industria de Tubos y Perfiles, S.A. - INTUPERSA', null, 'C.A.', 'Guatemala', 'Guatemala', 1961, 1961, null, 'Industrial,Residential', '9ª. Avenida 3-17 Z.2 Mixco, Colonia Alvarado, Guatemala, Guatemala', 14.676888, -90.62747, null;
+
+CREATE TABLE report.business_turnover_table(
+	id_business_turnover_table INT IDENTITY(1000, 1),
+	id_plant INT NOT NULL,
+	id_business_turnover INT NOT NULL,
+	CONSTRAINT pk_business_turnover_table
+		PRIMARY KEY(id_business_turnover_table),
+	CONSTRAINT fk_business_turnover_plant_table
+		FOREIGN KEY(id_plant)
+		REFERENCES report.plant_table(id_plant)
+		ON DELETE CASCADE
+		ON UPDATE CASCADE,
+	CONSTRAINT fk_business_turnover_class
+		FOREIGN KEY(id_business_turnover)
+		REFERENCES report.business_turnover_class_table(id_business_turnover)
+		ON DELETE CASCADE
+		ON UPDATE CASCADE
+);
+-- EXEC buscar_plant_por_giro_negocio 'Production'
+-- ('Production,Manufacturing of snacks')
+
+-- [Production] = (id business turnover, id plant, 1000)
+-- plant = plant_specific_turnover = [manufacturing]
