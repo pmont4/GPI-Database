@@ -364,7 +364,14 @@ CREATE OR ALTER PROCEDURE report.proc_insert_report
 	@date AS VARCHAR(20),
 	@id_client AS INT,
 	@id_plant AS INT,
-	@prepared_by AS VARCHAR(250)
+	@prepared_by AS VARCHAR(250),
+	@installed_capacity AS VARCHAR(70),
+	@built_up AS FLOAT,
+	@exposures AS FLOAT,
+	@has_hydrants AS BIT,
+	@hydrant_protection AS VARCHAR(20),
+	@hydrant_standpipe_type AS VARCHAR(20),
+	@hydrant_standpipe_class AS VARCHAR(20)
 AS
 	BEGIN TRY
 		IF EXISTS(SELECT id_client FROM report.client_table WHERE id_client = @id_client)
@@ -461,15 +468,130 @@ AS
 								END;
 							END;
 					END;
-				ELSE
+					DECLARE @installed_capacity_value AS FLOAT;
+					DECLARE @installed_capacity_id AS INT;
+
+					IF (@installed_capacity IS NOT NULL)
+						DECLARE @value_capacity AS VARCHAR(70);
+						DECLARE cur_capacity CURSOR DYNAMIC FORWARD_ONLY
+											FOR SELECT * FROM STRING_SPLIT(@installed_capacity, ',');
+						OPEN cur_capacity;
+						FETCH NEXT FROM cur_capacity INTO @value_capacity
+						WHILE @@FETCH_STATUS = 0
+							BEGIN TRY
+								IF ((SELECT TRY_CAST(@value_capacity AS FLOAT)) IS NULL)
+									IF EXISTS(SELECT id_capacity_type FROM report.capacity_type_table WHERE capacity_type_name = @value_capacity)
+										SET @installed_capacity_id = (SELECT id_capacity_type FROM report.capacity_type_table
+																								WHERE capacity_type_name = @value_capacity);
+									ELSE
+										PRINT CONCAT('The capacity type ("', @value_capacity, '") was not found in the capacity type table');
+								IF ((SELECT TRY_CAST(@value_capacity AS FLOAT)) IS NOT NULL)
+									SET @installed_capacity_value = @value_capacity;
+							FETCH NEXT FROM cur_capacity INTO @value_capacity
+							END TRY
+							BEGIN CATCH
+								PRINT CONCAT('Cannot set the values for the capacity type due to this error (', ERROR_MESSAGE(), ')');
+								CLOSE cur_capacity;
+								DEALLOCATE cur_capacity;
+							END CATCH;
+						CLOSE cur_capacity;
+						DEALLOCATE cur_capacity;
+					
+					DECLARE @built_up_save AS FLOAT;
+					IF (@built_up IS NULL) 
+						SET @built_up_save = 0.00;
+					ELSE
+						SET @built_up_save = @built_up;
+
+					DECLARE @exposures_save AS FLOAT;
+					IF (@exposures IS NULL)
+						SET @exposures_save = 0.0;
+					ELSE
+						SET @exposures_save = @exposures;
+
+					DECLARE @has_hydrants_to_save AS BIT;
+					IF (@has_hydrants IS NULL)
+						SET @has_hydrants_to_save = 0;
+					ELSE
+						SET @has_hydrants_to_save = @has_hydrants;
+
+					DECLARE @id_hydrant_protection_to_save AS INT;
+					IF (@hydrant_protection IS NOT NULL)
+						IF ((SELECT TRY_CAST(@hydrant_protection AS INT)) IS NOT NULL)
+							IF EXISTS(SELECT id_hydrant_protection_classification FROM report.hydrant_protection_classification_table
+																					WHERE id_hydrant_protection_classification = @hydrant_protection)
+								SET @id_hydrant_protection_to_save = (SELECT id_hydrant_protection_classification FROM report.hydrant_protection_classification_table
+																					WHERE id_hydrant_protection_classification = @hydrant_protection)
+							IF NOT EXISTS(SELECT id_hydrant_protection_classification FROM report.hydrant_protection_classification_table
+																					WHERE id_hydrant_protection_classification = @hydrant_protection)
+								SET @id_hydrant_protection_to_save = NULL;
+								PRINT CONCAT('The id (', @hydrant_protection, ') was not found in the hydrant protection table.');
+						IF ((SELECT TRY_CAST(@hydrant_protection AS INT)) IS NULL)
+							IF EXISTS(SELECT hydrant_protection_classification_name FROM report.hydrant_protection_classification_table
+																					WHERE id_hydrant_protection_classification = @hydrant_protection)
+								SET @id_hydrant_protection_to_save = (SELECT id_hydrant_protection_classification FROM report.hydrant_protection_classification_table
+																					WHERE hydrant_protection_classification_name = @hydrant_protection)
+							IF NOT EXISTS(SELECT hydrant_protection_classification_name FROM report.hydrant_protection_classification_table
+																					WHERE id_hydrant_protection_classification = @hydrant_protection)
+								SET @id_hydrant_protection_to_save = NULL;
+								PRINT CONCAT('The protection name (', @hydrant_protection, ') was not found in the hydrant protection table.');
+					IF (@hydrant_protection IS NULL)
+						SET @id_hydrant_protection_to_save = NULL;
+
+					DECLARE @id_hydrant_standpipe_type_to_save AS INT;
+					IF (@hydrant_standpipe_type IS NOT NULL)
+						IF ((SELECT TRY_CAST(@hydrant_standpipe_type AS INT)) IS NOT NULL)
+							IF EXISTS(SELECT id_hydrant_standpipe_system_type FROM report.hydrant_standpipe_system_type_table
+																				WHERE id_hydrant_standpipe_system_type = @hydrant_standpipe_type)
+								SET @id_hydrant_standpipe_type_to_save = (SELECT id_hydrant_standpipe_system_type FROM report.hydrant_standpipe_system_type_table
+																													WHERE id_hydrant_standpipe_system_type = @hydrant_standpipe_type)
+							IF NOT EXISTS(SELECT id_hydrant_standpipe_system_type FROM report.hydrant_standpipe_system_type_table
+																				WHERE id_hydrant_standpipe_system_type = @hydrant_standpipe_type)
+								SET @id_hydrant_standpipe_type_to_save = NULL;
+								PRINT CONCAT('The id (', @hydrant_standpipe_type, ') was not found in the hydrant standpipe type table.');
+						IF ((SELECT TRY_CAST(@hydrant_standpipe_type AS INT)) IS NULL)
+							IF EXISTS(SELECT id_hydrant_standpipe_system_type FROM report.hydrant_standpipe_system_type_table
+																				WHERE hydrant_standpipe_system_type_name = @hydrant_standpipe_type)
+								SET @id_hydrant_standpipe_type_to_save = (SELECT id_hydrant_standpipe_system_type FROM report.hydrant_standpipe_system_type_table
+																													WHERE hydrant_standpipe_system_type_name = @hydrant_standpipe_type)
+							IF NOT EXISTS(SELECT id_hydrant_standpipe_system_type FROM report.hydrant_standpipe_system_type_table
+																				WHERE hydrant_standpipe_system_type_name = @hydrant_standpipe_type)
+								SET @id_hydrant_standpipe_type_to_save = NULL;
+								PRINT CONCAT('The hydrant standpipe system type (', @hydrant_standpipe_type, ') was not found in the hydrant standpipe type table.');
+					IF (@hydrant_standpipe_type IS NULL)
+						SET @id_hydrant_standpipe_type_to_save = NULL;
+
+					DECLARE @id_hydrant_standpipe_class_to_save AS INT;
+					IF (@hydrant_standpipe_class IS NOT NULL)
+						IF ((SELECT TRY_CAST(@hydrant_standpipe_class AS INT)) IS NOT NULL)
+							IF EXISTS(SELECT id_hydrant_standpipe_system_class FROM report.hydrant_standpipe_system_class_table 
+																				WHERE id_hydrant_standpipe_system_class = @hydrant_standpipe_class)
+								SET @id_hydrant_standpipe_class_to_save = (SELECT id_hydrant_standpipe_system_class FROM report.hydrant_standpipe_system_class_table 
+																													WHERE id_hydrant_standpipe_system_class = @hydrant_standpipe_class);
+							IF NOT EXISTS(SELECT id_hydrant_standpipe_system_class FROM report.hydrant_standpipe_system_class_table 
+																				WHERE id_hydrant_standpipe_system_class = @hydrant_standpipe_class)
+								SET @id_hydrant_standpipe_class_to_save = NULL
+								PRINT CONCAT('The id (', @hydrant_standpipe_class, ') was not found in the hydrant standpipe class table.')
+						IF ((SELECT TRY_CAST(@hydrant_standpipe_class AS INT)) IS NULL)
+							IF EXISTS(SELECT id_hydrant_standpipe_system_class FROM report.hydrant_standpipe_system_class_table 
+																				WHERE hydrant_standpipe_system_class_name = @hydrant_standpipe_class)
+								SET @id_hydrant_standpipe_class_to_save = (SELECT id_hydrant_standpipe_system_class FROM report.hydrant_standpipe_system_class_table 
+																													WHERE hydrant_standpipe_system_class_name = @hydrant_standpipe_class);
+							IF NOT EXISTS(SELECT id_hydrant_standpipe_system_class FROM report.hydrant_standpipe_system_class_table 
+																				WHERE hydrant_standpipe_system_class_name = @hydrant_standpipe_class)
+								SET @id_hydrant_standpipe_class_to_save = NULL
+								PRINT CONCAT('The hydrant standpipe system class (', @hydrant_standpipe_class, ') was not found in the hydrant standpipe class table.')
+				IF (@prepared_by IS NULL)
 					PRINT 'Cannot leave the engineer field empty.';
-			ELSE
+			IF NOT EXISTS(SELECT id_plant FROM report.plant_table WHERE id_plant = @id_plant)
 				PRINT CONCAT('The id (', @id_plant,') was not found in the plant table.');
-		ELSE
+		IF NOT EXISTS(SELECT id_client FROM report.client_table WHERE id_client = @id_client)
 			PRINT CONCAT('The id (', @id_client, ') was not found in the client table.');
 	END TRY
 	BEGIN CATCH
 		PRINT CONCAT('Cannot insert the report due to this error (', ERROR_MESSAGE(), ')');
 	END CATCH;
+--
+-- Executable insertion report data
 
 EXEC report.proc_insert_report '1/november/2019', 1000, 1029, 'Marlon Lira';

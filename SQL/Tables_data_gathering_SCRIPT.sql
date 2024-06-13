@@ -52,6 +52,8 @@ EXEC view_table 'rp';
 EXEC view_table 'c';
 -- Plant executable
 EXEC view_table 'p';
+-- Plant parameters executable
+EXEC view_table 'pp';
 -- Type location executable
 EXEC view_table 'tl';
 -- Type location class executable
