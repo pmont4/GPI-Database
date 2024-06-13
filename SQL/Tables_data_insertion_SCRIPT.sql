@@ -214,7 +214,7 @@ EXEC report.proc_type_location_class 'Comercial';
 EXEC report.proc_type_location_class 'Residential';
 EXEC report.proc_type_location_class 'Rural';
 
--- Plant table date scripts
+-- Plant table data scripts
 --
 CREATE OR ALTER PROCEDURE report.proc_insert_plant
 	@account_name AS VARCHAR(100),
@@ -261,7 +261,7 @@ AS
 									SET @id_merchandise = (SELECT id_merchandise_classification_type FROM report.merchandise_classification_type_table
 																									WHERE merchandise_classification_type_name = @merchandise_classification);
 								ELSE
-									SET @id_merchandise = 0;
+									SET @id_merchandise = null;
 							END;
 							INSERT INTO report.plant_table (plant_account_name, plant_name, plant_continent, plant_country, plant_country_state, 
 															plant_construction_year, plant_operation_startup_year, plant_address, plant_latitude, plant_longitude, 
@@ -351,36 +351,87 @@ AFTER INSERT AS
 		END CATCH;
 	CLOSE cur;
 	DEALLOCATE cur;
-
-UPDATE report.plant_table SET plant_business_specific_turnover = 'Manufacture of natural and synthetic leather belts for export' WHERE id_plant = 1020;
-INSERT INTO report.business_turnover_table (id_plant, id_business_turnover)
-VALUES (1020, 1000);
-
-DELETE FROM report.plant_table WHERE id_plant = 1020;
+--
+-- Executable insertion plant data
 
 EXEC report.proc_insert_plant 'TATA - Accesorios Globales, S.A.', null, 'C.A.', 'Guatemala', 'Guatemala', 1985, 1985, null, 'Production', 'Manufacture of natural and synthetic leather belts for export', 'III', 'Industrial,Residential', '2ª. Calle 1-11 y 1-25 Zona 8, Granjas Gerona, San Miguel Petapa, Guatemala, C.A.', 14.533944, -90.593765, 1274;
-EXEC report.proc_insert_plant 'Sidegua Steel Park', null, 'C.A.', 'Guatemala', 'Escuintla', 1991, 1994, 'ASTM, COGUANOR, ACI, INTECO', 'Production', 'Steel Casting','Industrial,Rural', 'Km 65.5 CA9-A Highway, Masagua, Escuintla, Guatemala, C.A.', 14.533944, -90.593765, 1274;
-EXEC report.proc_insert_plant 'Industria de Tubos y Perfiles, S.A. - INTUPERSA', null, 'C.A.', 'Guatemala', 'Guatemala', 1961, 1961, null, 'Industrial,Residential', '9ª. Avenida 3-17 Z.2 Mixco, Colonia Alvarado, Guatemala, Guatemala', 14.676888, -90.62747, null;
+EXEC report.proc_insert_plant 'Sidegua Steel Park', null, 'C.A.', 'Guatemala', 'Escuintla', 1991, 1994, 'ASTM, COGUANOR, ACI, INTECO', 'Production', 'Steel Casting', '0','Industrial,Rural', 'Km 65.5 CA9-A Highway, Masagua, Escuintla, Guatemala, C.A.', 14.533944, -90.593765, 1274;
+EXEC report.proc_insert_plant 'Industria de Tubos y Perfiles, S.A. - INTUPERSA', null, 'C.A.', 'Guatemala', 'Guatemala', 1961, 1961, null, 'Production', 'Manufacturing and commercialization of steel pipes and profiles', 'I','Industrial,Residential', '9ª. Avenida 3-17 Z.2 Mixco, Colonia Alvarado, Guatemala, Guatemala', 14.628646, -90.578844, 1596;
 
-CREATE TABLE report.business_turnover_table(
-	id_business_turnover_table INT IDENTITY(1000, 1),
-	id_plant INT NOT NULL,
-	id_business_turnover INT NOT NULL,
-	CONSTRAINT pk_business_turnover_table
-		PRIMARY KEY(id_business_turnover_table),
-	CONSTRAINT fk_business_turnover_plant_table
-		FOREIGN KEY(id_plant)
-		REFERENCES report.plant_table(id_plant)
-		ON DELETE CASCADE
-		ON UPDATE CASCADE,
-	CONSTRAINT fk_business_turnover_class
-		FOREIGN KEY(id_business_turnover)
-		REFERENCES report.business_turnover_class_table(id_business_turnover)
-		ON DELETE CASCADE
-		ON UPDATE CASCADE
-);
--- EXEC buscar_plant_por_giro_negocio 'Production'
--- ('Production,Manufacturing of snacks')
+-- Report table data scripts
+--
+CREATE OR ALTER PROCEDURE report.proc_insert_report
+	@date AS VARCHAR(20),
+	@id_client AS INT,
+	@id_plant AS INT,
+	@prepared_by AS VARCHAR(250)
+AS
+	BEGIN TRY
+		IF EXISTS(SELECT id_client FROM report.client_table WHERE id_client = @id_client)
+			IF EXISTS(SELECT id_plant FROM report.plant_table WHERE id_plant = @id_plant)
+				IF (@prepared_by IS NOT NULL)
+					BEGIN
+						IF (@date LIKE '%/%')
+							DECLARE 
+								@day AS INT,
+								@month AS VARCHAR(10),
+								@year AS INT
+							BEGIN
+								DECLARE @date_to_save AS DATETIME;
 
--- [Production] = (id business turnover, id plant, 1000)
--- plant = plant_specific_turnover = [manufacturing]
+								DECLARE @value_date AS INT;
+								DECLARE cur_date CURSOR DYNAMIC FORWARD_ONLY
+													FOR SELECT * FROM STRING_SPLIT(@date, '/');
+								OPEN cur_date;
+								FETCH NEXT FROM cur_date INTO @value_date;
+								WHILE @@FETCH_STATUS = 0
+									BEGIN TRY
+										IF ((SELECT ISNUMERIC(@value_date)) = 1)
+											IF (@value_date > 2000 AND @value_date < 2100)
+												SET @year = @value_date;
+											ELSE
+												IF (@value_date >= 1 AND @value_date <= 31)
+													SET @day = @value_date
+										ELSE
+											SET @month = (SELECT CASE 
+																	WHEN @value_date = 'january' THEN '1'
+																	WHEN @value_date = 'february' THEN '2'
+																	WHEN @value_date = 'march' THEN '3'
+																	WHEN @value_date = 'april' THEN '4'
+																	WHEN @value_date = 'may' THEN '5'
+																	WHEN @value_date = 'june' THEN '6'
+																	WHEN @value_date = 'july' THEN '7'
+																	WHEN @value_date = 'agost' THEN '8'
+																	WHEN @value_date = 'september' THEN '9'
+																	WHEN @value_date = 'october' THEN '10'
+																	WHEN @value_date = 'november' THEN '11'
+																	WHEN @value_date = 'december' THEN '12'
+																	ELSE '1'
+																 END);
+										FETCH NEXT FROM cur_date INTO @value_date;
+									END TRY
+									BEGIN CATCH
+										PRINT CONCAT('An error ocurred while attempting to save the report date (', ERROR_MESSAGE(), ')');
+										CLOSE cur_date;
+										DEALLOCATE cur_date;
+									END CATCH;
+								CLOSE cur_date;
+								DEALLOCATE cur_date;
+
+								SET @date_to_save = DATEFROMPARTS(@year, @month, @day);
+								BEGIN
+									INSERT INTO report.report_table (report_date, id_client, id_plant)
+									VALUES (@date_to_save, @id_client, @id_plant);
+								END;
+							END;
+					END;
+				ELSE
+					PRINT 'Cannot leave the engineer field empty.';
+			ELSE
+				PRINT CONCAT('The id (', @id_plant,') was not found in the plant table.');
+		ELSE
+			PRINT CONCAT('The id (', @id_client, ') was not found in the client table.');
+	END TRY
+	BEGIN CATCH
+		PRINT CONCAT('Cannot insert the report due to this error (', ERROR_MESSAGE(), ')');
+	END CATCH;

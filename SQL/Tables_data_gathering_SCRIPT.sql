@@ -46,6 +46,10 @@ CREATE OR ALTER PROCEDURE view_table
 
 -- Engineer executable
 EXEC view_table 'e';
+-- Report executable
+EXEC view_table 'r';
+-- Report preparation executable
+EXEC view_table 'rp';
 -- Client executable
 EXEC view_table 'c';
 -- Plant executable
