@@ -374,39 +374,39 @@ AS
 						IF (@date LIKE '%/%')
 							DECLARE 
 								@day AS INT,
-								@month AS VARCHAR(10),
+								@month AS INT,
 								@year AS INT
 							BEGIN
 								DECLARE @date_to_save AS DATETIME;
 
-								DECLARE @value_date AS INT;
+								DECLARE @value_date AS VARCHAR(20);
 								DECLARE cur_date CURSOR DYNAMIC FORWARD_ONLY
 													FOR SELECT * FROM STRING_SPLIT(@date, '/');
 								OPEN cur_date;
 								FETCH NEXT FROM cur_date INTO @value_date;
 								WHILE @@FETCH_STATUS = 0
 									BEGIN TRY
-										IF ((SELECT ISNUMERIC(@value_date)) = 1)
+										IF ((SELECT TRY_CAST(@value_date AS INT)) IS NOT NULL)
 											IF (@value_date > 2000 AND @value_date < 2100)
 												SET @year = @value_date;
 											ELSE
 												IF (@value_date >= 1 AND @value_date <= 31)
 													SET @day = @value_date
-										ELSE
+										IF ((SELECT TRY_CAST(@value_date AS INT)) IS NULL)
 											SET @month = (SELECT CASE 
-																	WHEN @value_date = 'january' THEN '1'
-																	WHEN @value_date = 'february' THEN '2'
-																	WHEN @value_date = 'march' THEN '3'
-																	WHEN @value_date = 'april' THEN '4'
-																	WHEN @value_date = 'may' THEN '5'
-																	WHEN @value_date = 'june' THEN '6'
-																	WHEN @value_date = 'july' THEN '7'
-																	WHEN @value_date = 'agost' THEN '8'
-																	WHEN @value_date = 'september' THEN '9'
-																	WHEN @value_date = 'october' THEN '10'
-																	WHEN @value_date = 'november' THEN '11'
-																	WHEN @value_date = 'december' THEN '12'
-																	ELSE '1'
+																	WHEN @value_date = 'january' THEN 1
+																	WHEN @value_date = 'february' THEN 2
+																	WHEN @value_date = 'march' THEN 3
+																	WHEN @value_date = 'april' THEN 4
+																	WHEN @value_date = 'may' THEN 5
+																	WHEN @value_date = 'june' THEN 6
+																	WHEN @value_date = 'july' THEN 7
+																	WHEN @value_date = 'agost' THEN 8
+																	WHEN @value_date = 'september' THEN 9
+																	WHEN @value_date = 'october' THEN 10
+																	WHEN @value_date = 'november' THEN 11
+																	WHEN @value_date = 'december' THEN 12
+																	ELSE 1
 																 END);
 										FETCH NEXT FROM cur_date INTO @value_date;
 									END TRY
@@ -422,6 +422,42 @@ AS
 								BEGIN
 									INSERT INTO report.report_table (report_date, id_client, id_plant)
 									VALUES (@date_to_save, @id_client, @id_plant);
+									BEGIN
+										IF (@prepared_by LIKE '%,%')
+											BEGIN
+												DECLARE @value_engineer AS VARCHAR(60)
+												DECLARE cur_engineer CURSOR DYNAMIC FORWARD_ONLY
+																	FOR SELECT * FROM STRING_SPLIT(@prepared_by, ',');
+												OPEN cur_engineer;
+												FETCH NEXT FROM cur_engineer INTO @value_engineer;
+												WHILE @@FETCH_STATUS = 0
+													BEGIN TRY
+														IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE engineer_name = @value_engineer)
+															INSERT INTO report.report_preparation_table(id_report, id_engineer)
+															VALUES ((SELECT MAX(id_report) FROM report.report_table),
+																	(SELECT id_engineer FROM report.engineer_table WHERE engineer_name = @value_engineer));
+														ELSE
+															PRINT CONCAT('Cannot find the engineer "', @value_engineer, '" in the engineer table');
+														FETCH NEXT FROM cur_engineer INTO @value_engineer;
+													END TRY
+													BEGIN CATCH
+														PRINT CONCAT('Cannot insert the engineer in the report preparation table due to this error (', ERROR_MESSAGE(), ')')
+														CLOSE cur_engineer;
+														DEALLOCATE cur_engineer;
+													END CATCH;
+												CLOSE cur_engineer;
+												DEALLOCATE cur_engineer;
+											END;
+										IF (@prepared_by NOT LIKE '%,%')
+											IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE engineer_name = @prepared_by)
+												INSERT INTO report.report_preparation_table(id_report, id_engineer)
+												VALUES ((SELECT MAX(id_report) FROM report.report_table),
+														(SELECT id_engineer FROM report.engineer_table WHERE engineer_name = @prepared_by));
+											ELSE
+												PRINT CONCAT('Cannot find the engineer "', @prepared_by, '" in the engineer table');
+									END;
+								DECLARE @report_id AS INT = (SELECT MAX(id_report) FROM report.report_table);
+								PRINT CONCAT('The report with the ID ("', @report_id, '") was correctly saved in the database.');
 								END;
 							END;
 					END;
@@ -435,3 +471,5 @@ AS
 	BEGIN CATCH
 		PRINT CONCAT('Cannot insert the report due to this error (', ERROR_MESSAGE(), ')');
 	END CATCH;
+
+EXEC report.proc_insert_report '1/november/2019', 1000, 1029, 'Marlon Lira';
