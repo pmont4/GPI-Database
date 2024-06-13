@@ -14,8 +14,6 @@ CREATE OR ALTER PROCEDURE view_table
 				SELECT pp.* FROM report.plant_parameters pp ORDER BY pp.id_plant_parameters ASC;
 			ELSE IF (@Table = 'perils and risk' OR @Table = 'pr')
 				SELECT pr.* FROM report.perils_and_risk_table pr ORDER BY pr.id_perils_and_risk ASC;
-			ELSE IF (@Table = 'merchandise' OR @Table = 'm')
-				SELECT m.* FROM report.merchandise_table m ORDER BY m.id_merchandise ASC;
 			ELSE IF (@Table = 'merchandise class' OR @Table = 'mc')
 				SELECT mc.* FROM report.merchandise_classification_type_table mc ORDER BY mc.id_merchandise_classification_type ASC;
 			ELSE IF (@Table = 'loss scenario' OR @Table = 'ls')
@@ -70,6 +68,29 @@ EXEC view_table 'hsc';
 EXEC view_table 'btc';
 -- Business turnover executable
 EXEC view_table 'bt';
+-- Capacity type executable
+EXEC view_table 'ct';
+-- Perils and risk executable
+EXEC view_table 'pr';
+-- Loss scenario executable
+EXEC view_table 'ls';
 
+
+-- Columns
 SELECT C.COLUMN_NAME, C.DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'plant_table';
 SELECT C.COLUMN_NAME, C.DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'report_table';
+SELECT C.COLUMN_NAME, C.DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'engineer_table';
+SELECT C.COLUMN_NAME, C.DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'report_preparation_table';
+SELECT C.COLUMN_NAME, C.DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'plant_parameters';
+SELECT C.COLUMN_NAME, C.DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'perils_and_risk_table';
+SELECT C.COLUMN_NAME, C.DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'merchandise_classification_type_table';
+SELECT C.COLUMN_NAME, C.DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'loss_scenario_table';
+SELECT C.COLUMN_NAME, C.DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'client_table';
+SELECT C.COLUMN_NAME, C.DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'hydrant_protection_classification_table';
+SELECT C.COLUMN_NAME, C.DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'hydrant_standpipe_system_class_table';
+SELECT C.COLUMN_NAME, C.DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'hydrant_standpipe_system_type_table';
+SELECT C.COLUMN_NAME, C.DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'capacity_type_table';
+SELECT C.COLUMN_NAME, C.DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'type_location_classification_table';
+SELECT C.COLUMN_NAME, C.DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'type_location_table';
+SELECT C.COLUMN_NAME, C.DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'business_turnover_class_table';
+SELECT C.COLUMN_NAME, C.DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'business_turnover_table';
