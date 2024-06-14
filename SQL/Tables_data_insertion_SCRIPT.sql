@@ -370,10 +370,10 @@ CREATE OR ALTER PROCEDURE report.proc_insert_report
 	@has_lighting_protection AS BIT
 AS
 	BEGIN TRY
+	BEGIN TRANSACTION
 		IF EXISTS(SELECT id_client FROM report.client_table WHERE id_client = @id_client)
 			IF EXISTS(SELECT id_plant FROM report.plant_table WHERE id_plant = @id_plant)
 				IF (@prepared_by IS NOT NULL)
-					BEGIN
 						IF (@date LIKE '%/%')
 							DECLARE 
 								@day AS INT,
@@ -465,7 +465,6 @@ AS
 								PRINT CONCAT('The report with the ID ("', @report_id, '") was correctly saved in the database.');
 								END;
 							END;
-					END;
 					DECLARE @installed_capacity_value AS FLOAT;
 					DECLARE @installed_capacity_id AS INT;
 
@@ -627,6 +626,7 @@ AS
 	END TRY
 	BEGIN CATCH
 		PRINT CONCAT('Cannot insert the report due to this error (', ERROR_MESSAGE(), ')');
+		ROLLBACK TRANSACTION;
 	END CATCH;
 --
 -- Executable insertion report data
