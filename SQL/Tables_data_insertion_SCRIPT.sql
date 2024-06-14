@@ -371,7 +371,12 @@ CREATE OR ALTER PROCEDURE report.proc_insert_report
 	@has_hydrants AS BIT,
 	@hydrant_protection AS VARCHAR(20),
 	@hydrant_standpipe_type AS VARCHAR(20),
-	@hydrant_standpipe_class AS VARCHAR(20)
+	@hydrant_standpipe_class AS VARCHAR(20),
+	@has_foam_suppression AS BIT,
+	@has_suppression AS BIT,
+	@has_sprinklers AS BIT,
+	@has_afds AS BIT,
+	@has_fire_detection_batteries AS BIT
 AS
 	BEGIN TRY
 		IF EXISTS(SELECT id_client FROM report.client_table WHERE id_client = @id_client)
@@ -497,23 +502,11 @@ AS
 						CLOSE cur_capacity;
 						DEALLOCATE cur_capacity;
 					
-					DECLARE @built_up_save AS FLOAT;
-					IF (@built_up IS NULL) 
-						SET @built_up_save = 0.00;
-					ELSE
-						SET @built_up_save = @built_up;
+					DECLARE @built_up_save AS FLOAT = IIF(@built_up IS NULL, 0.00, @built_up);
 
-					DECLARE @exposures_save AS FLOAT;
-					IF (@exposures IS NULL)
-						SET @exposures_save = 0.0;
-					ELSE
-						SET @exposures_save = @exposures;
+					DECLARE @exposures_save AS FLOAT = IIF(@exposures IS NULL, 0.0, @exposures);
 
-					DECLARE @has_hydrants_to_save AS BIT;
-					IF (@has_hydrants IS NULL)
-						SET @has_hydrants_to_save = 0;
-					ELSE
-						SET @has_hydrants_to_save = @has_hydrants;
+					DECLARE @has_hydrants_to_save AS BIT = IIF(@has_hydrants IS NULL, 0, @has_hydrants);
 
 					DECLARE @id_hydrant_protection_to_save AS INT;
 					IF (@hydrant_protection IS NOT NULL)
@@ -581,6 +574,17 @@ AS
 																				WHERE hydrant_standpipe_system_class_name = @hydrant_standpipe_class)
 								SET @id_hydrant_standpipe_class_to_save = NULL
 								PRINT CONCAT('The hydrant standpipe system class (', @hydrant_standpipe_class, ') was not found in the hydrant standpipe class table.')
+
+					DECLARE @has_foam_suppression_sys_to_save AS BIT = IIF(@has_foam_suppression IS NULL, 0, @has_foam_suppression);
+
+					DECLARE @has_suppression_to_save AS BIT = IIF(@has_suppression IS NULL, 0, @has_suppression);
+
+					DECLARE @has_sprinklers_to_save AS BIT = IIF(@has_sprinklers IS NULL, 0, @has_sprinklers);
+
+					DECLARE @has_afds_to_save AS BIT = IIF(@has_afds IS NULL, 0, @has_afds);
+
+					DECLARE @has_fire_detetion_batteries_to_save AS BIT = IIF(@has_fire_detection_batteries IS NULL, 0, @has_fire_detection_batteries)
+
 				IF (@prepared_by IS NULL)
 					PRINT 'Cannot leave the engineer field empty.';
 			IF NOT EXISTS(SELECT id_plant FROM report.plant_table WHERE id_plant = @id_plant)
