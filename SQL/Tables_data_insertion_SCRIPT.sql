@@ -395,6 +395,7 @@ AS
 												IF (@value_date >= 1 AND @value_date <= 31)
 													SET @day = @value_date
 										IF ((SELECT TRY_CAST(@value_date AS INT)) IS NULL)
+											SET @month = LOWER(@month);
 											SET @month = (SELECT CASE 
 																	WHEN @value_date = 'january' THEN 1
 																	WHEN @value_date = 'february' THEN 2
@@ -425,7 +426,7 @@ AS
 									INSERT INTO report.report_table (report_date, id_client, id_plant)
 									VALUES (@date_to_save, @id_client, @id_plant);
 									BEGIN
-										IF (@prepared_by LIKE '%,%')
+										IF (@prepared_by LIKE '%,%') -- 'Marlon Lira, 1005'
 											BEGIN
 												DECLARE @value_engineer AS VARCHAR(60)
 												DECLARE cur_engineer CURSOR DYNAMIC FORWARD_ONLY
@@ -434,6 +435,7 @@ AS
 												FETCH NEXT FROM cur_engineer INTO @value_engineer;
 												WHILE @@FETCH_STATUS = 0
 													BEGIN TRY
+														SET @value_engineer = TRIM(@value_engineer);
 														IF ((SELECT TRY_CAST(@value_engineer AS INT)) IS NULL)
 															IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE engineer_name = @value_engineer)
 																INSERT INTO report.report_preparation_table(id_report, id_engineer)
@@ -459,6 +461,7 @@ AS
 												DEALLOCATE cur_engineer;
 											END;
 										IF (@prepared_by NOT LIKE '%,%')
+											SET @prepared_by = TRIM(@prepared_by); -- 
 											IF ((SELECT TRY_CAST(@prepared_by AS INT)) IS NULL)
 												IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE engineer_name = @prepared_by)
 													INSERT INTO report.report_preparation_table(id_report, id_engineer)
@@ -487,7 +490,7 @@ AS
 											FOR SELECT * FROM STRING_SPLIT(@installed_capacity, ',');
 						OPEN cur_capacity;
 						FETCH NEXT FROM cur_capacity INTO @value_capacity
-						WHILE @@FETCH_STATUS = 0
+						WHILE @@FETCH_STATUS = 0 
 							BEGIN TRY
 								IF ((SELECT TRY_CAST(@value_capacity AS FLOAT)) IS NULL)
 									IF EXISTS(SELECT id_capacity_type FROM report.capacity_type_table WHERE capacity_type_name = @value_capacity)
