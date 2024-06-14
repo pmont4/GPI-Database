@@ -515,7 +515,7 @@ AS
 															WHEN @exposures = 'Severe' THEN 3.0
 															ELSE 0.0
 														END);
-					IF (@exposures IS NULL)
+					ELSE
 						SET @exposures_save = 0.0;
 
 					DECLARE @has_hydrants_to_save AS BIT = IIF(@has_hydrants IS NULL, 0, @has_hydrants);
@@ -540,7 +540,7 @@ AS
 																					WHERE id_hydrant_protection_classification = @hydrant_protection)
 								SET @id_hydrant_protection_to_save = NULL;
 								PRINT CONCAT('The protection name (', @hydrant_protection, ') was not found in the hydrant protection table.');
-					IF (@hydrant_protection IS NULL)
+					IF (@hydrant_protection IS NULL OR @hydrant_protection = '')
 						SET @id_hydrant_protection_to_save = NULL;
 
 					DECLARE @id_hydrant_standpipe_type_to_save AS INT;
@@ -563,7 +563,7 @@ AS
 																				WHERE hydrant_standpipe_system_type_name = @hydrant_standpipe_type)
 								SET @id_hydrant_standpipe_type_to_save = NULL;
 								PRINT CONCAT('The hydrant standpipe system type (', @hydrant_standpipe_type, ') was not found in the hydrant standpipe type table.');
-					IF (@hydrant_standpipe_type IS NULL)
+					IF (@hydrant_standpipe_type IS NULL OR @hydrant_standpipe_type = '')
 						SET @id_hydrant_standpipe_type_to_save = NULL;
 
 					DECLARE @id_hydrant_standpipe_class_to_save AS INT;
@@ -586,6 +586,8 @@ AS
 																				WHERE hydrant_standpipe_system_class_name = @hydrant_standpipe_class)
 								SET @id_hydrant_standpipe_class_to_save = NULL
 								PRINT CONCAT('The hydrant standpipe system class (', @hydrant_standpipe_class, ') was not found in the hydrant standpipe class table.')
+					IF (@hydrant_standpipe_class IS NULL OR @hydrant_standpipe_class = '')
+						SET @id_hydrant_standpipe_class_to_save = NULL
 
 					DECLARE @has_foam_suppression_sys_to_save AS BIT = IIF(@has_foam_suppression IS NULL, 0, @has_foam_suppression);
 
@@ -602,7 +604,6 @@ AS
 					DECLARE @has_lighting_protection_to_save AS BIT = IIF(@has_lighting_protection IS NULL, 0, @has_lighting_protection);
 
 					BEGIN TRY
-						BEGIN TRANSACTION
 							INSERT INTO report.plant_parameters(id_report, id_plant, plant_parameters_installed_capacity, id_capacity_type, plant_parameters_built_up, plant_parameters_exposures,
 																plant_parameters_has_hydrants, id_hydrant_protection, id_hydrant_standpipe_type, id_hydrant_standpipe_class,
 																plant_parameters_has_foam_suppression_sys, plant_parameters_has_suppression_sys, plant_parameters_has_sprinklers,
@@ -615,7 +616,6 @@ AS
 					END TRY
 					BEGIN CATCH
 						PRINT CONCAT('Cannot insert into the plant parameters table due to this error (', ERROR_MESSAGE(), ')');
-						ROLLBACK TRANSACTION
 					END CATCH;
 
 				IF (@prepared_by IS NULL)
@@ -631,4 +631,7 @@ AS
 --
 -- Executable insertion report data
 
-EXEC report.proc_insert_report '1/november/2019', 1000, 1029, 'Marlon Lira';
+DELETE FROM report.report_table WHERE id_report = 1003;
+DELETE FROM report.report_preparation_table WHERE id_report_preparation = 1003;
+
+EXEC report.proc_insert_report '1/november/2019', 1000, 1029, 'Marlon Lira', '240000.00,units/Month', 12850.00, 'Light', 1, null, null, null, 0, 0, 0, 1, 0, 1, 1;
