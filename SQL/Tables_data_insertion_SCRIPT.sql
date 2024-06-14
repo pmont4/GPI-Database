@@ -7,35 +7,18 @@ CREATE OR ALTER PROCEDURE report.proc_insert_engineer
 	@contact VARCHAR(100)
 AS
 	BEGIN TRY
-		IF (@name != '')
-			INSERT INTO report.engineer_table (engineer_name, engineer_contact)
-			VALUES (@name, @contact);
-			PRINT CONCAT('The engineer "', @name, '" was correctly saved in the database');
-		IF (@name = '' OR @name IS NULL)
-			PRINT 'You cannot left the engineer name in blank.';
+		BEGIN TRANSACTION
+			IF (@name != '')
+				INSERT INTO report.engineer_table (engineer_name, engineer_contact)
+				VALUES (@name, @contact);
+				PRINT CONCAT('The engineer "', @name, '" was correctly saved in the database');
+			IF (@name = '' OR @name IS NULL)
+				PRINT 'You cannot left the engineer name in blank.';
 	END TRY
 	BEGIN CATCH
 		PRINT CONCAT('Cannot insert the engineer "', @name,'" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		ROLLBACK TRANSACTION;
 	END CATCH;
-
-CREATE OR ALTER TRIGGER report.trigger_engineer_null_verifications
-ON report.engineer_table 
-AFTER INSERT
-AS
-	DECLARE
-		@id INT,
-		@contact VARCHAR(100);
-	BEGIN
-		SET @contact = (SELECT i.engineer_contact FROM inserted i);
-		SET @id = (SELECT i.id_engineer FROM inserted i);
-
-		BEGIN
-			IF (@contact = '')
-				UPDATE report.engineer_table 
-				SET engineer_contact = NULL 
-				WHERE id_engineer = @id;
-		END;
-	END;
 --
 -- Executable insertion engineer data.
 
@@ -47,15 +30,17 @@ CREATE OR ALTER PROCEDURE report.proc_insert_client
 	@name VARCHAR(100)
 AS
 	BEGIN TRY
-		IF (@name != '')
-			INSERT INTO report.client_table(client_name)
-			VALUES (@name);
-			PRINT CONCAT('The client "', @name, '" was correctly saved in the database');
-		IF (@name = '' OR @name IS NULL)
-			PRINT 'You cannot left the client name in blank.';
+		BEGIN TRANSACTION
+			IF (@name != '')
+				INSERT INTO report.client_table(client_name)
+				VALUES (@name);
+				PRINT CONCAT('The client "', @name, '" was correctly saved in the database');
+			IF (@name = '' OR @name IS NULL)
+				PRINT 'You cannot left the client name in blank.';
 	END TRY
 	BEGIN CATCH
 		PRINT CONCAT('Cannot insert the client "', @name,'" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		ROLLBACK TRANSACTION;
 	END CATCH;
 --
 -- Executable insertion client data.
@@ -68,17 +53,17 @@ CREATE OR ALTER PROCEDURE report.proc_insert_capacity_type
 	@name VARCHAR(100)
 AS
 	BEGIN TRY
-		BEGIN
+		BEGIN TRANSACTION
 			IF (@name != '')
 				INSERT INTO report.capacity_type_table(capacity_type_name)
 				VALUES (@name);
 				PRINT CONCAT('The capacity type "', @name, '" was correctly saved in the database');
 			IF (@name = '' OR @name IS NULL)
 				PRINT 'You cannot left the capacity type name in blank.';
-		END;
 	END TRY
 	BEGIN CATCH
 		PRINT CONCAT('Cannot insert the capacity type "', @name,'" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		ROLLBACK TRANSACTION;
 	END CATCH;
 --
 -- Executable insertion capacity type data
@@ -91,17 +76,17 @@ CREATE OR ALTER PROCEDURE report.proc_insert_merchandise_class
 	@name VARCHAR(100)
 AS
 	BEGIN TRY
-		BEGIN
+		BEGIN TRANSACTION
 			IF (@name != '')
 				INSERT INTO report.merchandise_classification_type_table(merchandise_classification_type_name)
 				VALUES (@name);
 				PRINT CONCAT('The merchandise class "', @name, '" was correctly saved in the database');
 			IF (@name = '' OR @name IS NULL)
 				PRINT 'You cannot left the merchandise class name in blank.';
-		END;
 	END TRY
 	BEGIN CATCH
 		PRINT CONCAT('Cannot insert the merchandise class "', @name,'" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		ROLLBACK TRANSACTION;
 	END CATCH;
 --
 -- Executable insertion merchandise class data
@@ -117,17 +102,17 @@ CREATE OR ALTER PROCEDURE report.proc_insert_hydrant_protection_class
 	@name VARCHAR(100)
 AS
 	BEGIN TRY
-		BEGIN
+		BEGIN TRANSACTION
 			IF (@name != '')
 				INSERT INTO report.hydrant_protection_classification_table(hydrant_protection_classification_name)
 				VALUES (@name);
 				PRINT CONCAT('The hydrant protection class "', @name, '" was correctly saved in the database');
 			IF (@name = '' OR @name IS NULL)
 				PRINT 'You cannot left the hydrant protection class name in blank.';
-		END;
 	END TRY
 	BEGIN CATCH
 		PRINT CONCAT('Cannot insert the hydrant protection class "', @name,'" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		ROLLBACK TRANSACTION
 	END CATCH;
 --
 -- Executable insertion hydrant protection class data
@@ -142,17 +127,17 @@ CREATE OR ALTER PROCEDURE report.proc_insert_hydrant_standpipe_type
 	@name VARCHAR(100)
 AS
 	BEGIN TRY
-		BEGIN
+		BEGIN TRANSACTION
 			IF (@name != '')
 				INSERT INTO report.hydrant_standpipe_system_type_table(hydrant_standpipe_system_type_name)
 				VALUES (@name);
 				PRINT CONCAT('The hydrant standpipe type "', @name, '" was correctly saved in the database');
 			IF (@name = '' OR @name IS NULL)
 				PRINT 'You cannot left the hydrant standpipe type  name in blank.';
-		END;
 	END TRY
 	BEGIN CATCH
 		PRINT CONCAT('Cannot insert the hydrant standpipe type  "', @name,'" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		ROLLBACK TRANSACTION;
 	END CATCH;
 --
 -- Executable insertion hydrant standpipe type data
@@ -169,17 +154,17 @@ CREATE OR ALTER PROCEDURE report.proc_insert_hydrant_standpipe_class
 	@name VARCHAR(100)
 AS
 	BEGIN TRY
-		BEGIN
+		BEGIN TRANSACTION
 			IF (@name != '')
 				INSERT INTO report.hydrant_standpipe_system_class_table(hydrant_standpipe_system_class_name)
 				VALUES (@name);
 				PRINT CONCAT('The hydrant standpipe class "', @name, '" was correctly saved in the database');
 			IF (@name = '' OR @name IS NULL)
 				PRINT 'You cannot left the hydrant standpipe class  name in blank.';
-		END;
 	END TRY
 	BEGIN CATCH
 		PRINT CONCAT('Cannot insert the hydrant standpipe class  "', @name,'" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		ROLLBACK TRANSACTION;
 	END CATCH;
 --
 -- Executable insertion hydrant standpipe class data
@@ -194,17 +179,17 @@ CREATE OR ALTER PROCEDURE report.proc_type_location_class
 	@name VARCHAR(100)
 AS
 	BEGIN TRY
-		BEGIN
+		BEGIN TRANSACTION
 			IF (@name != '')
 				INSERT INTO report.type_location_classification_table(type_location_class_name)
 				VALUES (@name);
 				PRINT CONCAT('The type location class "', @name, '" was correctly saved in the database');
 			IF (@name = '' OR @name IS NULL)
 				PRINT 'You cannot left the type location class name in blank.';
-		END;
 	END TRY
 	BEGIN CATCH
 		PRINT CONCAT('Cannot insert the type location class  "', @name,'" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		ROLLBACK TRANSACTION;
 	END CATCH;
 --
 -- Executable insertion type location class data
@@ -277,17 +262,19 @@ AS
 									FETCH NEXT FROM cur INTO @val;
 									WHILE @@FETCH_STATUS = 0
 										BEGIN TRY
-											IF EXISTS(SELECT type_location_class_name FROM report.type_location_classification_table 
-																						WHERE type_location_class_name = @val)
-												INSERT INTO report.type_location_table (id_plant, id_type_location_class)
-												VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
-														(SELECT id_type_location_class FROM report.type_location_classification_table WHERE type_location_class_name = @val));
-											ELSE
-												PRINT CONCAT('No values found in type location table for "', @val, '"');
-										FETCH NEXT FROM cur INTO @val;
+											BEGIN TRANSACTION
+												IF EXISTS(SELECT type_location_class_name FROM report.type_location_classification_table 
+																							WHERE type_location_class_name = @val)
+													INSERT INTO report.type_location_table (id_plant, id_type_location_class)
+													VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
+															(SELECT id_type_location_class FROM report.type_location_classification_table WHERE type_location_class_name = @val));
+												ELSE
+													PRINT CONCAT('No values found in type location table for "', @val, '"');
+											FETCH NEXT FROM cur INTO @val;
 										END TRY
 										BEGIN CATCH
 											PRINT CONCAT('An error ocurred while trying to insert data in type location table (', ERROR_MESSAGE(), ')');
+											ROLLBACK TRANSACTION;
 											CLOSE cur;
 											DEALLOCATE cur;
 										END CATCH;
@@ -338,14 +325,16 @@ AFTER INSERT AS
 				SET @plant_longitude = 'No longitude';
 			IF (@plant_meters_above_sea_level IS NULL)
 				SET @plant_meters_above_sea_level = 0;
-			UPDATE plant_table SET plant_address = @plant_address, plant_certifications = @plant_certification, plant_latitude = @plant_latitude, 
-									plant_longitude = @plant_longitude, plant_meters_above_sea_level = @plant_meters_above_sea_level
-									WHERE id_plant = @id;
+			BEGIN TRANSACTION
+				UPDATE plant_table SET plant_address = @plant_address, plant_certifications = @plant_certification, plant_latitude = @plant_latitude, 
+										plant_longitude = @plant_longitude, plant_meters_above_sea_level = @plant_meters_above_sea_level
+										WHERE id_plant = @id;
 										
 			FETCH NEXT FROM cur INTO @plant_address, @plant_certification, @plant_latitude, @plant_longitude, @plant_meters_above_sea_level
 		END TRY
 		BEGIN CATCH
 			PRINT CONCAT('An error ocurred while attempting to update the plant table (', ERROR_MESSAGE(), ')');
+			ROLLBACK TRANSACTION;
 			CLOSE cur;
 			DEALLOCATE cur;
 		END CATCH;
@@ -367,7 +356,7 @@ CREATE OR ALTER PROCEDURE report.proc_insert_report
 	@prepared_by AS VARCHAR(250),
 	@installed_capacity AS VARCHAR(70),
 	@built_up AS FLOAT,
-	@exposures AS FLOAT,
+	@exposures AS VARCHAR(20),
 	@has_hydrants AS BIT,
 	@hydrant_protection AS VARCHAR(20),
 	@hydrant_standpipe_type AS VARCHAR(20),
@@ -376,7 +365,9 @@ CREATE OR ALTER PROCEDURE report.proc_insert_report
 	@has_suppression AS BIT,
 	@has_sprinklers AS BIT,
 	@has_afds AS BIT,
-	@has_fire_detection_batteries AS BIT
+	@has_fire_detection_batteries AS BIT,
+	@has_private_brigade AS BIT,
+	@has_lighting_protection AS BIT
 AS
 	BEGIN TRY
 		IF EXISTS(SELECT id_client FROM report.client_table WHERE id_client = @id_client)
@@ -444,16 +435,18 @@ AS
 												FETCH NEXT FROM cur_engineer INTO @value_engineer;
 												WHILE @@FETCH_STATUS = 0
 													BEGIN TRY
-														IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE engineer_name = @value_engineer)
-															INSERT INTO report.report_preparation_table(id_report, id_engineer)
-															VALUES ((SELECT MAX(id_report) FROM report.report_table),
-																	(SELECT id_engineer FROM report.engineer_table WHERE engineer_name = @value_engineer));
-														ELSE
-															PRINT CONCAT('Cannot find the engineer "', @value_engineer, '" in the engineer table');
-														FETCH NEXT FROM cur_engineer INTO @value_engineer;
+														BEGIN TRANSACTION
+															IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE engineer_name = @value_engineer)
+																INSERT INTO report.report_preparation_table(id_report, id_engineer)
+																VALUES ((SELECT MAX(id_report) FROM report.report_table),
+																		(SELECT id_engineer FROM report.engineer_table WHERE engineer_name = @value_engineer));
+															ELSE
+																PRINT CONCAT('Cannot find the engineer "', @value_engineer, '" in the engineer table');
+															FETCH NEXT FROM cur_engineer INTO @value_engineer;
 													END TRY
 													BEGIN CATCH
 														PRINT CONCAT('Cannot insert the engineer in the report preparation table due to this error (', ERROR_MESSAGE(), ')')
+														ROLLBACK TRANSACTION
 														CLOSE cur_engineer;
 														DEALLOCATE cur_engineer;
 													END CATCH;
@@ -504,7 +497,26 @@ AS
 					
 					DECLARE @built_up_save AS FLOAT = IIF(@built_up IS NULL, 0.00, @built_up);
 
-					DECLARE @exposures_save AS FLOAT = IIF(@exposures IS NULL, 0.0, @exposures);
+					DECLARE @exposures_save AS FLOAT;
+					IF (@exposures IS NOT NULL)
+						IF ((SELECT TRY_CAST(@exposures AS FLOAT)) IS NOT NULL)
+							DECLARE @exposures_to_evaluate AS FLOAT = CAST(@exposures AS FLOAT);
+							IF (@exposures_to_evaluate >= 0.0 AND @exposures_to_evaluate <= 3.0)
+								SET @exposures_save = @exposures_to_evaluate;
+							ELSE
+								SET @exposures_save = 0.0
+						IF ((SELECT TRY_CAST(@exposures AS FLOAT)) IS NULL)
+							SET @exposures_save = (SELECT CASE
+															WHEN @exposures = 'None' THEN 0.0
+															WHEN @exposures = 'Light' THEN 1.0
+															WHEN @exposures = 'Light/Moderate' THEN 1.5
+															WHEN @exposures = 'Moderate' THEN 2.0
+															WHEN @exposures = 'Moderate/Severe' THEN 2.5
+															WHEN @exposures = 'Severe' THEN 3.0
+															ELSE 0.0
+														END);
+					IF (@exposures IS NULL)
+						SET @exposures_save = 0.0;
 
 					DECLARE @has_hydrants_to_save AS BIT = IIF(@has_hydrants IS NULL, 0, @has_hydrants);
 
@@ -583,7 +595,28 @@ AS
 
 					DECLARE @has_afds_to_save AS BIT = IIF(@has_afds IS NULL, 0, @has_afds);
 
-					DECLARE @has_fire_detetion_batteries_to_save AS BIT = IIF(@has_fire_detection_batteries IS NULL, 0, @has_fire_detection_batteries)
+					DECLARE @has_fire_detetion_batteries_to_save AS BIT = IIF(@has_fire_detection_batteries IS NULL, 0, @has_fire_detection_batteries);
+
+					DECLARE @has_private_brigade_to_save AS BIT = IIF(@has_private_brigade IS NULL, 0, @has_private_brigade);
+
+					DECLARE @has_lighting_protection_to_save AS BIT = IIF(@has_lighting_protection IS NULL, 0, @has_lighting_protection);
+
+					BEGIN TRY
+						BEGIN TRANSACTION
+							INSERT INTO report.plant_parameters(id_report, id_plant, plant_parameters_installed_capacity, id_capacity_type, plant_parameters_built_up, plant_parameters_exposures,
+																plant_parameters_has_hydrants, id_hydrant_protection, id_hydrant_standpipe_type, id_hydrant_standpipe_class,
+																plant_parameters_has_foam_suppression_sys, plant_parameters_has_suppression_sys, plant_parameters_has_sprinklers,
+																plant_parameters_has_afds, plant_parameters_has_fire_detection_batteries, plant_parameters_has_private_brigade,
+																plant_parameters_has_lighting_protection)
+																VALUES((SELECT MAX(id_report) FROM report.report_table), @id_plant, @installed_capacity_value, @installed_capacity_id, @built_up_save,
+																		@exposures_save, @has_hydrants_to_save, @id_hydrant_protection_to_save, @id_hydrant_standpipe_type_to_save, @id_hydrant_standpipe_class_to_save,
+																		@has_foam_suppression_sys_to_save, @has_suppression_to_save, @has_sprinklers_to_save, @has_afds_to_save, @has_fire_detetion_batteries_to_save,
+																		@has_private_brigade_to_save, @has_lighting_protection_to_save);
+					END TRY
+					BEGIN CATCH
+						PRINT CONCAT('Cannot insert into the plant parameters table due to this error (', ERROR_MESSAGE(), ')');
+						ROLLBACK TRANSACTION
+					END CATCH;
 
 				IF (@prepared_by IS NULL)
 					PRINT 'Cannot leave the engineer field empty.';
