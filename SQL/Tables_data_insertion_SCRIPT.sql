@@ -426,7 +426,7 @@ AS
 									INSERT INTO report.report_table (report_date, id_client, id_plant)
 									VALUES (@date_to_save, @id_client, @id_plant);
 									BEGIN
-										IF (@prepared_by LIKE '%,%') -- 'Marlon Lira, 1005'
+										IF (@prepared_by LIKE '%,%')
 											BEGIN
 												DECLARE @value_engineer AS VARCHAR(60)
 												DECLARE cur_engineer CURSOR DYNAMIC FORWARD_ONLY
@@ -461,7 +461,7 @@ AS
 												DEALLOCATE cur_engineer;
 											END;
 										IF (@prepared_by NOT LIKE '%,%')
-											SET @prepared_by = TRIM(@prepared_by); -- 
+											SET @prepared_by = TRIM(@prepared_by);  
 											IF ((SELECT TRY_CAST(@prepared_by AS INT)) IS NULL)
 												IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE engineer_name = @prepared_by)
 													INSERT INTO report.report_preparation_table(id_report, id_engineer)
@@ -538,14 +538,17 @@ AS
 					DECLARE @id_hydrant_protection_to_save AS INT;
 					IF (@hydrant_protection IS NOT NULL)
 						IF ((SELECT TRY_CAST(@hydrant_protection AS INT)) IS NOT NULL)
-							IF EXISTS(SELECT id_hydrant_protection_classification FROM report.hydrant_protection_classification_table
-																					WHERE id_hydrant_protection_classification = @hydrant_protection)
-								SET @id_hydrant_protection_to_save = (SELECT id_hydrant_protection_classification FROM report.hydrant_protection_classification_table
-																					WHERE id_hydrant_protection_classification = @hydrant_protection)
-							IF NOT EXISTS(SELECT id_hydrant_protection_classification FROM report.hydrant_protection_classification_table
-																					WHERE id_hydrant_protection_classification = @hydrant_protection)
-								SET @id_hydrant_protection_to_save = NULL;
-								PRINT CONCAT('The id (', @hydrant_protection, ') was not found in the hydrant protection table.');
+							IF (@hydrant_protection >= 1000)
+								IF EXISTS(SELECT id_hydrant_protection_classification FROM report.hydrant_protection_classification_table
+																						WHERE id_hydrant_protection_classification = @hydrant_protection)
+									SET @id_hydrant_protection_to_save = (SELECT id_hydrant_protection_classification FROM report.hydrant_protection_classification_table
+																													WHERE id_hydrant_protection_classification = @hydrant_protection)
+								IF NOT EXISTS(SELECT id_hydrant_protection_classification FROM report.hydrant_protection_classification_table
+																							WHERE id_hydrant_protection_classification = @hydrant_protection)
+									SET @id_hydrant_protection_to_save = NULL;
+									PRINT CONCAT('The id (', @hydrant_protection, ') was not found in the hydrant protection table.');
+							IF (@hydrant_protection < 1000)
+								SET @hydrant_protection = NULL;
 						IF ((SELECT TRY_CAST(@hydrant_protection AS INT)) IS NULL)
 							IF EXISTS(SELECT hydrant_protection_classification_name FROM report.hydrant_protection_classification_table
 																					WHERE id_hydrant_protection_classification = @hydrant_protection)
@@ -561,14 +564,17 @@ AS
 					DECLARE @id_hydrant_standpipe_type_to_save AS INT;
 					IF (@hydrant_standpipe_type IS NOT NULL)
 						IF ((SELECT TRY_CAST(@hydrant_standpipe_type AS INT)) IS NOT NULL)
-							IF EXISTS(SELECT id_hydrant_standpipe_system_type FROM report.hydrant_standpipe_system_type_table
-																				WHERE id_hydrant_standpipe_system_type = @hydrant_standpipe_type)
-								SET @id_hydrant_standpipe_type_to_save = (SELECT id_hydrant_standpipe_system_type FROM report.hydrant_standpipe_system_type_table
-																													WHERE id_hydrant_standpipe_system_type = @hydrant_standpipe_type)
-							IF NOT EXISTS(SELECT id_hydrant_standpipe_system_type FROM report.hydrant_standpipe_system_type_table
-																				WHERE id_hydrant_standpipe_system_type = @hydrant_standpipe_type)
-								SET @id_hydrant_standpipe_type_to_save = NULL;
-								PRINT CONCAT('The id (', @hydrant_standpipe_type, ') was not found in the hydrant standpipe type table.');
+							IF (@hydrant_standpipe_type >= 1000)
+								IF EXISTS(SELECT id_hydrant_standpipe_system_type FROM report.hydrant_standpipe_system_type_table
+																					WHERE id_hydrant_standpipe_system_type = @hydrant_standpipe_type)
+									SET @id_hydrant_standpipe_type_to_save = (SELECT id_hydrant_standpipe_system_type FROM report.hydrant_standpipe_system_type_table
+																														WHERE id_hydrant_standpipe_system_type = @hydrant_standpipe_type)
+								IF NOT EXISTS(SELECT id_hydrant_standpipe_system_type FROM report.hydrant_standpipe_system_type_table
+																						WHERE id_hydrant_standpipe_system_type = @hydrant_standpipe_type)
+									SET @id_hydrant_standpipe_type_to_save = NULL;
+									PRINT CONCAT('The id (', @hydrant_standpipe_type, ') was not found in the hydrant standpipe type table.');
+							IF (@hydrant_standpipe_type < 1000)
+								SET @hydrant_standpipe_type = NULL;
 						IF ((SELECT TRY_CAST(@hydrant_standpipe_type AS INT)) IS NULL)
 							IF EXISTS(SELECT id_hydrant_standpipe_system_type FROM report.hydrant_standpipe_system_type_table
 																				WHERE hydrant_standpipe_system_type_name = @hydrant_standpipe_type)
@@ -584,14 +590,17 @@ AS
 					DECLARE @id_hydrant_standpipe_class_to_save AS INT;
 					IF (@hydrant_standpipe_class IS NOT NULL)
 						IF ((SELECT TRY_CAST(@hydrant_standpipe_class AS INT)) IS NOT NULL)
-							IF EXISTS(SELECT id_hydrant_standpipe_system_class FROM report.hydrant_standpipe_system_class_table 
-																				WHERE id_hydrant_standpipe_system_class = @hydrant_standpipe_class)
-								SET @id_hydrant_standpipe_class_to_save = (SELECT id_hydrant_standpipe_system_class FROM report.hydrant_standpipe_system_class_table 
-																													WHERE id_hydrant_standpipe_system_class = @hydrant_standpipe_class);
-							IF NOT EXISTS(SELECT id_hydrant_standpipe_system_class FROM report.hydrant_standpipe_system_class_table 
-																				WHERE id_hydrant_standpipe_system_class = @hydrant_standpipe_class)
-								SET @id_hydrant_standpipe_class_to_save = NULL
-								PRINT CONCAT('The id (', @hydrant_standpipe_class, ') was not found in the hydrant standpipe class table.')
+							IF (@hydrant_standpipe_class >= 1000)
+								IF EXISTS(SELECT id_hydrant_standpipe_system_class FROM report.hydrant_standpipe_system_class_table 
+																					WHERE id_hydrant_standpipe_system_class = @hydrant_standpipe_class)
+									SET @id_hydrant_standpipe_class_to_save = (SELECT id_hydrant_standpipe_system_class FROM report.hydrant_standpipe_system_class_table 
+																														WHERE id_hydrant_standpipe_system_class = @hydrant_standpipe_class);
+								IF NOT EXISTS(SELECT id_hydrant_standpipe_system_class FROM report.hydrant_standpipe_system_class_table 
+																						WHERE id_hydrant_standpipe_system_class = @hydrant_standpipe_class)
+									SET @id_hydrant_standpipe_class_to_save = NULL
+									PRINT CONCAT('The id (', @hydrant_standpipe_class, ') was not found in the hydrant standpipe class table.')
+							IF (@hydrant_standpipe_class < 1000)
+								SET @id_hydrant_standpipe_class_to_save = NULL;
 						IF ((SELECT TRY_CAST(@hydrant_standpipe_class AS INT)) IS NULL)
 							IF EXISTS(SELECT id_hydrant_standpipe_system_class FROM report.hydrant_standpipe_system_class_table 
 																				WHERE hydrant_standpipe_system_class_name = @hydrant_standpipe_class)
