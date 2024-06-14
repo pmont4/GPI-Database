@@ -370,7 +370,6 @@ CREATE OR ALTER PROCEDURE report.proc_insert_report
 	@has_lighting_protection AS BIT
 AS
 	BEGIN TRY
-	BEGIN TRANSACTION
 		IF EXISTS(SELECT id_client FROM report.client_table WHERE id_client = @id_client)
 			IF EXISTS(SELECT id_plant FROM report.plant_table WHERE id_plant = @id_plant)
 				IF (@prepared_by IS NOT NULL)
@@ -435,18 +434,24 @@ AS
 												FETCH NEXT FROM cur_engineer INTO @value_engineer;
 												WHILE @@FETCH_STATUS = 0
 													BEGIN TRY
-														BEGIN TRANSACTION
+														IF ((SELECT TRY_CAST(@value_engineer AS INT)) IS NULL)
 															IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE engineer_name = @value_engineer)
 																INSERT INTO report.report_preparation_table(id_report, id_engineer)
 																VALUES ((SELECT MAX(id_report) FROM report.report_table),
 																		(SELECT id_engineer FROM report.engineer_table WHERE engineer_name = @value_engineer));
 															ELSE
 																PRINT CONCAT('Cannot find the engineer "', @value_engineer, '" in the engineer table');
-															FETCH NEXT FROM cur_engineer INTO @value_engineer;
+														ELSE IF ((SELECT TRY_CAST(@value_engineer AS INT)) IS NOT NULL)
+															IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE id_engineer = @value_engineer)
+																INSERT INTO report.report_preparation_table(id_report, id_engineer)
+																VALUES ((SELECT MAX(id_report) FROM report.report_table),
+																		(SELECT id_engineer FROM report.engineer_table WHERE id_engineer = @value_engineer));
+															ELSE
+																PRINT CONCAT('Cannot find the engineer "', @value_engineer, '" in the engineer table');
+														FETCH NEXT FROM cur_engineer INTO @value_engineer;
 													END TRY
 													BEGIN CATCH
 														PRINT CONCAT('Cannot insert the engineer in the report preparation table due to this error (', ERROR_MESSAGE(), ')')
-														ROLLBACK TRANSACTION
 														CLOSE cur_engineer;
 														DEALLOCATE cur_engineer;
 													END CATCH;
@@ -454,12 +459,20 @@ AS
 												DEALLOCATE cur_engineer;
 											END;
 										IF (@prepared_by NOT LIKE '%,%')
-											IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE engineer_name = @prepared_by)
-												INSERT INTO report.report_preparation_table(id_report, id_engineer)
-												VALUES ((SELECT MAX(id_report) FROM report.report_table),
-														(SELECT id_engineer FROM report.engineer_table WHERE engineer_name = @prepared_by));
-											ELSE
-												PRINT CONCAT('Cannot find the engineer "', @prepared_by, '" in the engineer table');
+											IF ((SELECT TRY_CAST(@prepared_by AS INT)) IS NULL)
+												IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE engineer_name = @prepared_by)
+													INSERT INTO report.report_preparation_table(id_report, id_engineer)
+													VALUES ((SELECT MAX(id_report) FROM report.report_table),
+															(SELECT id_engineer FROM report.engineer_table WHERE engineer_name = @prepared_by));
+												ELSE
+													PRINT CONCAT('Cannot find the engineer "', @prepared_by, '" in the engineer table');
+											ELSE IF ((SELECT TRY_CAST(@prepared_by AS INT)) IS NOT NULL)
+												IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE id_engineer = @prepared_by)
+													INSERT INTO report.report_preparation_table(id_report, id_engineer)
+													VALUES ((SELECT MAX(id_report) FROM report.report_table),
+															(SELECT id_engineer FROM report.engineer_table WHERE id_engineer = @prepared_by));
+												ELSE
+													PRINT CONCAT('Cannot find the engineer "', @prepared_by, '" in the engineer table');
 									END;
 								DECLARE @report_id AS INT = (SELECT MAX(id_report) FROM report.report_table);
 								PRINT CONCAT('The report with the ID ("', @report_id, '") was correctly saved in the database.');
@@ -626,12 +639,12 @@ AS
 	END TRY
 	BEGIN CATCH
 		PRINT CONCAT('Cannot insert the report due to this error (', ERROR_MESSAGE(), ')');
-		ROLLBACK TRANSACTION;
 	END CATCH;
 --
 -- Executable insertion report data
 
-DELETE FROM report.report_table WHERE id_report = 1003;
-DELETE FROM report.report_preparation_table WHERE id_report_preparation = 1003;
+DELETE FROM report.report_table WHERE id_report = 1004;
+DELETE FROM report.report_preparation_table WHERE id_report_preparation = 1004;
+DELETE FROM report.plant_parameters WHERE id_plant_parameters = 1001;
 
-EXEC report.proc_insert_report '1/november/2019', 1000, 1029, 'Marlon Lira', '240000.00,units/Month', 12850.00, 'Light', 1, null, null, null, 0, 0, 0, 1, 0, 1, 1;
+EXEC report.proc_insert_report '1/november/2019', 1000, 1029, '1000', '240000.00,units/Month', 12850.00, 'Light', 1, null, null, null, 0, 0, 0, 1, 0, 1, 1;
