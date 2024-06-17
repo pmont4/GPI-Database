@@ -708,8 +708,12 @@ AS
 				CLOSE text_cur;
 				DEALLOCATE text_cur;
 			END;
+		ELSE IF (@text NOT LIKE '% %')
+			BEGIN
+				SET @text = TRIM(@text);
 
+				SET @toReturn = CONCAT(UPPER(LEFT(@text, 1)),
+									LOWER(RIGHT(@text, LEN(@text) -1)));
+			END;
 		RETURN @ToReturn;
 	END;
-
-SELECT report.CORRECT_GRAMMAR_IN_NAMES('hEllo    worlD  asda');
