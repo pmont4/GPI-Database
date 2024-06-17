@@ -660,3 +660,56 @@ DELETE FROM report.report_preparation_table WHERE id_report_preparation = 1004;
 DELETE FROM report.plant_parameters WHERE id_plant_parameters = 1001;
 
 EXEC report.proc_insert_report '1/november/2019', 1000, 1029, '1000', '240000.00,units/Month', 12850.00, 'Light', 1, null, null, null, 0, 0, 0, 1, 0, 1, 1;
+
+CREATE OR ALTER FUNCTION report.REMOVE_EXTRA_SPACES(@input VARCHAR(150))
+RETURNS VARCHAR(150)
+AS
+	BEGIN
+		SET @input = LTRIM(RTRIM(@input));
+
+		DECLARE @output VARCHAR(150);
+		SET @output = '';
+		DECLARE @i INT = 1;
+		DECLARE @len INT = LEN(@input);
+		DECLARE @prevChar VARCHAR(1) = '';
+
+		WHILE @i <= @len
+		BEGIN
+			DECLARE @char VARCHAR(1) = SUBSTRING(@input, @i, 1);
+			IF NOT(@char = ' ' AND @prevChar = ' ')
+				SET @output = @output + @char;
+				SET @prevChar = @char;
+				SET @i = @i + 1;
+		END;
+		RETURN @output;
+	END;
+
+CREATE OR ALTER FUNCTION report.CORRECT_GRAMMAR_IN_NAMES(@text VARCHAR(150))
+RETURNS VARCHAR(100)
+AS
+	BEGIN
+		DECLARE @toReturn AS VARCHAR(100);
+		IF (@text LIKE '% %')
+			BEGIN
+				SET @text = report.REMOVE_EXTRA_SPACES(@text);
+
+				DECLARE @text_value AS VARCHAR(50);
+				DECLARE text_cur CURSOR DYNAMIC FORWARD_ONLY
+								FOR SELECT * FROM STRING_SPLIT(@text, ' ');
+				OPEN text_cur;
+				FETCH NEXT FROM text_cur INTO @text_value;
+				WHILE @@FETCH_STATUS = 0
+					BEGIN
+						IF (@toReturn IS NULL) SET @toReturn = '';
+						SET @toReturn = CONCAT(@ToReturn, UPPER(LEFT(@text_value, 1)),
+												LOWER(RIGHT(@text_value, LEN(@text_value) -1)), ' ');
+						FETCH NEXT FROM text_cur INTO @text_value;
+					END;
+				CLOSE text_cur;
+				DEALLOCATE text_cur;
+			END;
+
+		RETURN @ToReturn;
+	END;
+
+SELECT report.CORRECT_GRAMMAR_IN_NAMES('hEllo    worlD  asda');
