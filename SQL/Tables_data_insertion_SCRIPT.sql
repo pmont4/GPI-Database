@@ -870,6 +870,8 @@ CREATE OR ALTER FUNCTION report.DETERMINATE_RATE_OF_RISK(@rate AS VARCHAR(20))
 RETURNS FLOAT
 AS
 	BEGIN
+		SET @rate = report.REMOVE_EXTRA_SPACES(@rate);
+
 		DECLARE @to_return AS FLOAT;
 		IF (@rate IS NULL)
 			SET @to_return = 0.0;
@@ -888,12 +890,12 @@ AS
 		ELSE IF ((SELECT TRY_CAST(@rate AS FLOAT)) IS NOT NULL)
 			BEGIN
 				SET @to_return = (SELECT CASE
-											WHEN @rate >= 0.0 AND @rate <= 1.0 THEN 0.0
-											WHEN @rate >= 1.0 AND @rate < 1.5 THEN 1.0
-											WHEN @rate >= 1.5 AND @rate < 2.0 THEN 1.5
-											WHEN @rate >= 2.0 AND @rate < 2.5 THEN 2.0
-											WHEN @rate >= 2.5 AND @rate < 3.0 THEN 2.5
-											WHEN @rate >= 3.0 THEN 3.0
+											WHEN CAST(@rate AS FLOAT(2)) >= 0.0 AND CAST(@rate AS FLOAT(2)) <= 1.0 THEN 0.0
+											WHEN CAST(@rate AS FLOAT(2)) >= 1.0 AND CAST(@rate AS FLOAT(2)) < 1.5 THEN 1.0
+											WHEN CAST(@rate AS FLOAT(2)) >= 1.5 AND CAST(@rate AS FLOAT(2)) < 2.0 THEN 1.5
+											WHEN CAST(@rate AS FLOAT(2)) >= 2.0 AND CAST(@rate AS FLOAT(2)) < 2.5 THEN 2.0
+											WHEN CAST(@rate AS FLOAT(2)) >= 2.5 AND CAST(@rate AS FLOAT(2)) < 3.0 THEN 2.5
+											WHEN CAST(@rate AS FLOAT(2)) >= 3.0 THEN 3.0
 											ELSE 0.0
 										END);
 			END;
@@ -930,7 +932,7 @@ AS
 					END;
 						INSERT INTO report.perils_and_risk_table(id_report, id_plant, perils_and_risk_fire_explosion, perils_and_risk_landslide_subsidence, perils_and_risk_water_flooding, perils_and_risk_wind_storm, perils_and_risk_lighting,
 																perils_and_risk_earthquake, perils_and_risk_tsunami, perils_and_risk_collapse, perils_and_risk_aircraft, perils_and_risk_riot, perils_and_risk_design_failure, perils_and_risk_overall_rating)
-																VALUES (@id_plant, @plant, report.DETERMINATE_RATE_OF_RISK(@fire_explosion), report.DETERMINATE_RATE_OF_RISK(@landslie_subsidence), report.DETERMINATE_RATE_OF_RISK(@water_flooding),
+																VALUES (@id_report, @plant, report.DETERMINATE_RATE_OF_RISK(@fire_explosion), report.DETERMINATE_RATE_OF_RISK(@landslie_subsidence), report.DETERMINATE_RATE_OF_RISK(@water_flooding),
 																		report.DETERMINATE_RATE_OF_RISK(@wind_storm), report.DETERMINATE_RATE_OF_RISK(@lighting), report.DETERMINATE_RATE_OF_RISK(@earthquake), report.DETERMINATE_RATE_OF_RISK(@tsunami),
 																		report.DETERMINATE_RATE_OF_RISK(@collapse), report.DETERMINATE_RATE_OF_RISK(@aircraft), report.DETERMINATE_RATE_OF_RISK(@riot), report.DETERMINATE_RATE_OF_RISK(@design_failure),
 																		report.DETERMINATE_RATE_OF_RISK(@overall_rating));
@@ -939,9 +941,12 @@ AS
 				END;
 			ELSE
 				PRINT ('Cannot insert in the perils and risk table because either the report or the plant cannot be found in the database');
-				ROLLBACK TRANSACTION @tran_insert_perils_and_risk;
 	END TRY
 	BEGIN CATCH
 		PRINT CONCAT('Cannot insert into the perils and risk table due to this error: ("', ERROR_MESSAGE(), '")');
 		ROLLBACK TRANSACTION @tran_insert_perils_and_risk;
 	END CATCH;
+--
+-- Executable insertion perils and risk data
+
+EXEC report.proc_insert_perils_and_risk_table 1005, '1029', '2.5', 'light', 'light', '2', 'severe', null, 'none', '0', 'light', '1', 'LIGHT ', 'lIgHt';
