@@ -862,8 +862,86 @@ AS
 --
 -- Executable insertion report data
 
-DELETE FROM report.report_table WHERE id_report = 1004;
-DELETE FROM report.report_preparation_table WHERE id_report_preparation = 1004;
-DELETE FROM report.plant_parameters WHERE id_plant_parameters = 1001;
-
 EXEC report.proc_insert_report '1/november/2019', '1000', '1029', '1000', '240000.00,units/Month', 12850.00, 'Light', 1, null, null, null, 0, 0, 0, 1, 0, 1, 1;
+
+-- Perils and risk table date scripts
+--
+CREATE OR ALTER FUNCTION report.DETERMINATE_RATE_OF_RISK(@rate AS VARCHAR(20))
+RETURNS FLOAT
+AS
+	BEGIN
+		DECLARE @to_return AS FLOAT;
+		IF (@rate IS NULL)
+			SET @to_return = 0.0;
+		IF ((SELECT TRY_CAST(@rate AS FLOAT)) IS NULL)
+			BEGIN
+				SET @to_return = (SELECT CASE
+											WHEN LOWER(@rate) = 'none' THEN 0.0
+											WHEN LOWER(@rate) = 'light' THEN 1.0
+											WHEN LOWER(@rate) = 'light/moderate' THEN 1.5
+											WHEN LOWER(@rate) = 'moderate' THEN 2.0
+											WHEN LOWER(@rate) = 'moderate/severe' THEN 2.5
+											WHEN LOWER(@rate) = 'severe' THEN 3.0
+											ELSE 0.0
+										END);
+			END;
+		ELSE IF ((SELECT TRY_CAST(@rate AS FLOAT)) IS NOT NULL)
+			BEGIN
+				SET @to_return = (SELECT CASE
+											WHEN @rate >= 0.0 AND @rate <= 1.0 THEN 0.0
+											WHEN @rate >= 1.0 AND @rate < 1.5 THEN 1.0
+											WHEN @rate >= 1.5 AND @rate < 2.0 THEN 1.5
+											WHEN @rate >= 2.0 AND @rate < 2.5 THEN 2.0
+											WHEN @rate >= 2.5 AND @rate < 3.0 THEN 2.5
+											WHEN @rate >= 3.0 THEN 3.0
+											ELSE 0.0
+										END);
+			END;
+		RETURN @to_return;
+	END;
+
+CREATE OR ALTER PROCEDURE report.proc_insert_perils_and_risk_table
+	@id_report AS INT,
+	@plant AS VARCHAR(100),
+	@fire_explosion AS VARCHAR(20),
+	@landslie_subsidence AS VARCHAR(20),
+	@water_flooding AS VARCHAR(20),
+	@wind_storm AS VARCHAR(20),
+	@lighting AS VARCHAR(20),
+	@earthquake AS VARCHAR(20),
+	@tsunami AS VARCHAR(20),
+	@collapse AS VARCHAR(20),
+	@aircraft AS VARCHAR(20),
+	@riot AS VARCHAR(20),
+	@design_failure AS VARCHAR(20),
+	@overall_rating AS VARCHAR(20)
+AS
+	BEGIN TRY
+		DECLARE @tran_insert_perils_and_risk AS VARCHAR(45) = 'insert_perils_and_risk';
+		BEGIN TRANSACTION @tran_insert_perils_and_risk
+			IF (@id_report IS NOT NULL AND @plant IS NOT NULL AND (SELECT id_report FROM report.report_table WHERE id_report = @id_report) IS NOT NULL)
+				BEGIN
+					DECLARE @id_plant AS INT
+					BEGIN
+						IF ((SELECT TRY_CAST(@plant AS INT)) IS NULL)
+							SET @id_plant = ISNULL((SELECT id_plant FROM report.plant_table WHERE plant_name = report.CORRECT_GRAMMAR_IN_NAMES(@plant)), null);
+						IF ((SELECT TRY_CAST(@plant AS INT)) IS NOT NULL)
+							SET @id_plant = ISNULL((SELECT id_plant FROM report.plant_table WHERE id_plant = @plant), null);
+					END;
+						INSERT INTO report.perils_and_risk_table(id_report, id_plant, perils_and_risk_fire_explosion, perils_and_risk_landslide_subsidence, perils_and_risk_water_flooding, perils_and_risk_wind_storm, perils_and_risk_lighting,
+																perils_and_risk_earthquake, perils_and_risk_tsunami, perils_and_risk_collapse, perils_and_risk_aircraft, perils_and_risk_riot, perils_and_risk_design_failure, perils_and_risk_overall_rating)
+																VALUES (@id_plant, @plant, report.DETERMINATE_RATE_OF_RISK(@fire_explosion), report.DETERMINATE_RATE_OF_RISK(@landslie_subsidence), report.DETERMINATE_RATE_OF_RISK(@water_flooding),
+																		report.DETERMINATE_RATE_OF_RISK(@wind_storm), report.DETERMINATE_RATE_OF_RISK(@lighting), report.DETERMINATE_RATE_OF_RISK(@earthquake), report.DETERMINATE_RATE_OF_RISK(@tsunami),
+																		report.DETERMINATE_RATE_OF_RISK(@collapse), report.DETERMINATE_RATE_OF_RISK(@aircraft), report.DETERMINATE_RATE_OF_RISK(@riot), report.DETERMINATE_RATE_OF_RISK(@design_failure),
+																		report.DETERMINATE_RATE_OF_RISK(@overall_rating));
+						PRINT CONCAT('Perils and risk for the ID report: (', @id_report,') and plant with the ID: (', @id_plant,') correctly saved');
+						COMMIT TRANSACTION @tran_insert_perils_and_risk;
+				END;
+			ELSE
+				PRINT ('Cannot insert in the perils and risk table because either the report or the plant cannot be found in the database');
+				ROLLBACK TRANSACTION @tran_insert_perils_and_risk;
+	END TRY
+	BEGIN CATCH
+		PRINT CONCAT('Cannot insert into the perils and risk table due to this error: ("', ERROR_MESSAGE(), '")');
+		ROLLBACK TRANSACTION @tran_insert_perils_and_risk;
+	END CATCH;
