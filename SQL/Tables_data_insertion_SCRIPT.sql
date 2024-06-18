@@ -69,17 +69,24 @@ CREATE OR ALTER PROCEDURE report.proc_insert_engineer
 	@contact VARCHAR(100)
 AS
 	BEGIN TRY
-		BEGIN TRANSACTION
+		DECLARE @tran_insert_engineer AS VARCHAR(45) = 'insert_engineer';
+		BEGIN TRANSACTION @tran_insert_engineer
 			IF (@name != '')
-				INSERT INTO report.engineer_table (engineer_name, engineer_contact)
-				VALUES ((SELECT report.CORRECT_GRAMMAR_IN_NAMES(@name)), @contact);
-				PRINT CONCAT('The engineer "', (SELECT report.CORRECT_GRAMMAR_IN_NAMES(@name)), '" was correctly saved in the database');
-			IF (@name = '' OR @name IS NULL)
-				PRINT 'You cannot left the engineer name in blank.';
+				BEGIN
+					INSERT INTO report.engineer_table (engineer_name, engineer_contact)
+					VALUES (report.CORRECT_GRAMMAR_IN_NAMES(@name), @contact);
+					PRINT CONCAT('The engineer "', report.CORRECT_GRAMMAR_IN_NAMES(@name), '" was correctly saved in the database');
+					COMMIT TRANSACTION @tran_insert_engineer;
+				END;
+			ELSE IF (@name = '' OR @name IS NULL)
+				BEGIN
+					PRINT 'You cannot left the engineer name in blank.';
+					ROLLBACK TRANSACTION @tran_insert_engineer;
+				END;
 	END TRY
 	BEGIN CATCH
-		PRINT CONCAT('Cannot insert the engineer "', (SELECT report.CORRECT_GRAMMAR_IN_NAMES(@name)),'" in the database due to this error: (', ERROR_MESSAGE(), ')');
-		ROLLBACK TRANSACTION;
+		PRINT CONCAT('Cannot insert the engineer "', report.CORRECT_GRAMMAR_IN_NAMES(@name),'" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		ROLLBACK TRANSACTION @tran_insert_engineer;
 	END CATCH;
 --
 -- Executable insertion engineer data.
@@ -92,17 +99,24 @@ CREATE OR ALTER PROCEDURE report.proc_insert_client
 	@name VARCHAR(100)
 AS
 	BEGIN TRY
-		BEGIN TRANSACTION
+		DECLARE @tran_insert_client AS VARCHAR(45) = 'insert_client';
+		BEGIN TRANSACTION @tran_insert_client
 			IF (@name != '')
-				INSERT INTO report.client_table(client_name)
-				VALUES ((SELECT report.CORRECT_GRAMMAR_IN_NAMES(@name)));
-				PRINT CONCAT('The client "', (SELECT report.CORRECT_GRAMMAR_IN_NAMES(@name)), '" was correctly saved in the database');
-			IF (@name = '' OR @name IS NULL)
-				PRINT 'You cannot left the client name in blank.';
+				BEGIN
+					INSERT INTO report.client_table(client_name)
+					VALUES (report.CORRECT_GRAMMAR_IN_NAMES(@name));
+					PRINT CONCAT('The client "', report.CORRECT_GRAMMAR_IN_NAMES(@name), '" was correctly saved in the database');
+					COMMIT TRANSACTION @tran_insert_client;
+				END;
+			ELSE IF (@name = '' OR @name IS NULL)
+				BEGIN
+					PRINT 'You cannot left the client name in blank.';
+					ROLLBACK TRANSACTION @tran_insert_client;
+				END;
 	END TRY
 	BEGIN CATCH 
-		PRINT CONCAT('Cannot insert the client "', (SELECT report.CORRECT_GRAMMAR_IN_NAMES(@name)), '" in the database due to this error: (', ERROR_MESSAGE(), ')');
-		ROLLBACK TRANSACTION;
+		PRINT CONCAT('Cannot insert the client "', report.CORRECT_GRAMMAR_IN_NAMES(@name), '" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		ROLLBACK TRANSACTION @tran_insert_client;
 	END CATCH;
 --
 -- Executable insertion client data.
@@ -115,17 +129,24 @@ CREATE OR ALTER PROCEDURE report.proc_insert_capacity_type
 	@name VARCHAR(100)
 AS
 	BEGIN TRY
-		BEGIN TRANSACTION
+		DECLARE @tran_insert_capacity_type AS VARCHAR(45) = 'insert_capacity_type'
+		BEGIN TRANSACTION @tran_insert_capacity_type
 			IF (@name != '')
-				INSERT INTO report.capacity_type_table(capacity_type_name)
-				VALUES (@name);
-				PRINT CONCAT('The capacity type "', @name, '" was correctly saved in the database');
-			IF (@name = '' OR @name IS NULL)
-				PRINT 'You cannot left the capacity type name in blank.';
+				BEGIN
+					INSERT INTO report.capacity_type_table(capacity_type_name)
+					VALUES (@name);
+					PRINT CONCAT('The capacity type "', @name, '" was correctly saved in the database');
+					COMMIT TRANSACTION @tran_insert_capacity_type;
+				END;
+			ELSE IF (@name = '' OR @name IS NULL)
+				BEGIN
+					PRINT 'You cannot left the capacity type name in blank.';
+					ROLLBACK TRANSACTION @tran_insert_capacity_type;
+				END;
 	END TRY
 	BEGIN CATCH
 		PRINT CONCAT('Cannot insert the capacity type "', @name,'" in the database due to this error: (', ERROR_MESSAGE(), ')');
-		ROLLBACK TRANSACTION;
+		ROLLBACK TRANSACTION @tran_insert_capacity_type;
 	END CATCH;
 --
 -- Executable insertion capacity type data
@@ -138,17 +159,24 @@ CREATE OR ALTER PROCEDURE report.proc_insert_merchandise_class
 	@name VARCHAR(100)
 AS
 	BEGIN TRY
-		BEGIN TRANSACTION
+		DECLARE @tran_insert_merchandise_class AS VARCHAR(45) = 'insert_merchandise_class'
+		BEGIN TRANSACTION @tran_insert_merchandise_class
 			IF (@name != '')
-				INSERT INTO report.merchandise_classification_type_table(merchandise_classification_type_name)
-				VALUES (@name);
-				PRINT CONCAT('The merchandise class "', @name, '" was correctly saved in the database');
+				BEGIN
+					INSERT INTO report.merchandise_classification_type_table(merchandise_classification_type_name)
+					VALUES (UPPER(@name));
+					PRINT CONCAT('The merchandise class "', UPPER(@name), '" was correctly saved in the database');
+					COMMIT TRANSACTION @tran_insert_merchandise_class;
+				END;
 			IF (@name = '' OR @name IS NULL)
-				PRINT 'You cannot left the merchandise class name in blank.';
+				BEGIN
+					PRINT 'You cannot left the merchandise class name in blank.';
+					ROLLBACK TRANSACTION @tran_insert_merchandise_class;
+				END;
 	END TRY
 	BEGIN CATCH
-		PRINT CONCAT('Cannot insert the merchandise class "', @name,'" in the database due to this error: (', ERROR_MESSAGE(), ')');
-		ROLLBACK TRANSACTION;
+		PRINT CONCAT('Cannot insert the merchandise class "', UPPER(@name),'" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		ROLLBACK TRANSACTION @tran_insert_merchandise_class;
 	END CATCH;
 --
 -- Executable insertion merchandise class data
@@ -164,17 +192,24 @@ CREATE OR ALTER PROCEDURE report.proc_insert_hydrant_protection_class
 	@name VARCHAR(100)
 AS
 	BEGIN TRY
-		BEGIN TRANSACTION
+		DECLARE @tran_insert_hydrant_protection_class AS VARCHAR(45) = 'insert_hydrant_protection_class'
+		BEGIN TRANSACTION @tran_insert_hydrant_protection_class
 			IF (@name != '')
-				INSERT INTO report.hydrant_protection_classification_table(hydrant_protection_classification_name)
-				VALUES ((SELECT report.CORRECT_GRAMMAR_IN_NAMES(@name)));
-				PRINT CONCAT('The hydrant protection class "', (SELECT report.CORRECT_GRAMMAR_IN_NAMES(@name)), '" was correctly saved in the database');
-			IF (@name = '' OR @name IS NULL)
-				PRINT 'You cannot left the hydrant protection class name in blank.';
+				BEGIN
+					INSERT INTO report.hydrant_protection_classification_table(hydrant_protection_classification_name)
+					VALUES (report.CORRECT_GRAMMAR_IN_NAMES(@name));
+					PRINT CONCAT('The hydrant protection class "', report.CORRECT_GRAMMAR_IN_NAMES(@name), '" was correctly saved in the database');
+					COMMIT TRANSACTION @tran_insert_hydrant_protection_class;
+				END;
+			ELSE IF (@name = '' OR @name IS NULL)
+				BEGIN
+					PRINT 'You cannot left the hydrant protection class name in blank.';
+					ROLLBACK TRANSACTION @tran_insert_hydrant_protection_class;
+				END;
 	END TRY
 	BEGIN CATCH
-		PRINT CONCAT('Cannot insert the hydrant protection class "', (SELECT report.CORRECT_GRAMMAR_IN_NAMES(@name)),'" in the database due to this error: (', ERROR_MESSAGE(), ')');
-		ROLLBACK TRANSACTION
+		PRINT CONCAT('Cannot insert the hydrant protection class "', report.CORRECT_GRAMMAR_IN_NAMES(@name),'" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		ROLLBACK TRANSACTION @tran_insert_hydrant_protection_class;
 	END CATCH;
 --
 -- Executable insertion hydrant protection class data
@@ -189,17 +224,24 @@ CREATE OR ALTER PROCEDURE report.proc_insert_hydrant_standpipe_type
 	@name VARCHAR(100)
 AS
 	BEGIN TRY
-		BEGIN TRANSACTION
+		DECLARE @tran_insert_hydrant_standpipe_type AS VARCHAR(45) = 'insert_hydrant_standpipe_type'
+		BEGIN TRANSACTION @tran_insert_hydrant_standpipe_type
 			IF (@name != '')
-				INSERT INTO report.hydrant_standpipe_system_type_table(hydrant_standpipe_system_type_name)
-				VALUES ((SELECT report.CORRECT_GRAMMAR_IN_NAMES(@name)));
-				PRINT CONCAT('The hydrant standpipe type "', (SELECT report.CORRECT_GRAMMAR_IN_NAMES(@name)), '" was correctly saved in the database');
-			IF (@name = '' OR @name IS NULL)
-				PRINT 'You cannot left the hydrant standpipe type  name in blank.';
+				BEGIN
+					INSERT INTO report.hydrant_standpipe_system_type_table(hydrant_standpipe_system_type_name)
+					VALUES (report.CORRECT_GRAMMAR_IN_NAMES(@name));
+					PRINT CONCAT('The hydrant standpipe type "', report.CORRECT_GRAMMAR_IN_NAMES(@name), '" was correctly saved in the database');
+					COMMIT TRANSACTION @tran_insert_hydrant_standpipe_type;
+				END;
+			ELSE IF (@name = '' OR @name IS NULL)
+				BEGIN
+					PRINT 'You cannot left the hydrant standpipe type  name in blank.';
+					ROLLBACK TRANSACTION @tran_insert_hydrant_standpipe_type;
+				END;
 	END TRY
 	BEGIN CATCH
-		PRINT CONCAT('Cannot insert the hydrant standpipe type  "', (SELECT report.CORRECT_GRAMMAR_IN_NAMES(@name)),'" in the database due to this error: (', ERROR_MESSAGE(), ')');
-		ROLLBACK TRANSACTION;
+		PRINT CONCAT('Cannot insert the hydrant standpipe type  "', report.CORRECT_GRAMMAR_IN_NAMES(@name),'" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		ROLLBACK TRANSACTION @tran_insert_hydrant_standpipe_type;
 	END CATCH;
 --
 -- Executable insertion hydrant standpipe type data
@@ -216,17 +258,24 @@ CREATE OR ALTER PROCEDURE report.proc_insert_hydrant_standpipe_class
 	@name VARCHAR(100)
 AS
 	BEGIN TRY
-		BEGIN TRANSACTION
+		DECLARE @tran_insert_hydrant_standpipe_class AS VARCHAR(45) = 'insert_hydrant_standpipe_class'
+		BEGIN TRANSACTION @tran_insert_hydrant_standpipe_class
 			IF (@name != '')
-				INSERT INTO report.hydrant_standpipe_system_class_table(hydrant_standpipe_system_class_name)
-				VALUES (@name);
-				PRINT CONCAT('The hydrant standpipe class "', @name, '" was correctly saved in the database');
-			IF (@name = '' OR @name IS NULL)
-				PRINT 'You cannot left the hydrant standpipe class  name in blank.';
+				BEGIN
+					INSERT INTO report.hydrant_standpipe_system_class_table(hydrant_standpipe_system_class_name)
+					VALUES (UPPER(@name));
+					PRINT CONCAT('The hydrant standpipe class "', UPPER(@name), '" was correctly saved in the database');
+					COMMIT TRANSACTION @tran_insert_hydrant_standpipe_class;
+				END;
+			ELSE IF (@name = '' OR @name IS NULL)
+				BEGIN
+					PRINT 'You cannot left the hydrant standpipe class  name in blank.';
+					COMMIT TRANSACTION @tran_insert_hydrant_standpipe_class;
+				END;
 	END TRY
 	BEGIN CATCH
-		PRINT CONCAT('Cannot insert the hydrant standpipe class  "', @name,'" in the database due to this error: (', ERROR_MESSAGE(), ')');
-		ROLLBACK TRANSACTION;
+		PRINT CONCAT('Cannot insert the hydrant standpipe class  "', UPPER(@name), '" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		ROLLBACK TRANSACTION @tran_insert_hydrant_standpipe_class; 
 	END CATCH;
 --
 -- Executable insertion hydrant standpipe class data
@@ -237,29 +286,62 @@ EXEC report.proc_insert_hydrant_standpipe_class 'III';
 
 -- Type location classification data
 --
-CREATE OR ALTER PROCEDURE report.proc_type_location_class
+CREATE OR ALTER PROCEDURE report.proc_insert_type_location_class
 	@name VARCHAR(100)
 AS
 	BEGIN TRY
-		BEGIN TRANSACTION
+		DECLARE @tran_insert_type_location_class AS VARCHAR(45) = 'insert_type_location_class'
+		BEGIN TRANSACTION @tran_insert_type_location_class
 			IF (@name != '')
-				INSERT INTO report.type_location_classification_table(type_location_class_name)
-				VALUES ((SELECT report.CORRECT_GRAMMAR_IN_NAMES(@name)));
-				PRINT CONCAT('The type location class "', (SELECT report.CORRECT_GRAMMAR_IN_NAMES(@name)), '" was correctly saved in the database');
-			IF (@name = '' OR @name IS NULL)
-				PRINT 'You cannot left the type location class name in blank.';
+				BEGIN
+					INSERT INTO report.type_location_classification_table(type_location_class_name)
+					VALUES (report.CORRECT_GRAMMAR_IN_NAMES(@name));
+					PRINT CONCAT('The type location class "', report.CORRECT_GRAMMAR_IN_NAMES(@name), '" was correctly saved in the database');
+					COMMIT TRANSACTION @tran_insert_type_location_class
+				END;
+			ELSE IF (@name = '' OR @name IS NULL)
+				BEGIN
+					PRINT 'You cannot left the type location class name in blank.';
+					ROLLBACK TRANSACTION @tran_insert_type_location_class
+				END;
 	END TRY
 	BEGIN CATCH
-		PRINT CONCAT('Cannot insert the type location class  "', (SELECT report.CORRECT_GRAMMAR_IN_NAMES(@name)),'" in the database due to this error: (', ERROR_MESSAGE(), ')');
-		ROLLBACK TRANSACTION;
+		PRINT CONCAT('Cannot insert the type location class  "', report.CORRECT_GRAMMAR_IN_NAMES(@name),'" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		ROLLBACK TRANSACTION @tran_insert_type_location_class;
 	END CATCH;
 --
 -- Executable insertion type location class data
 
-EXEC report.proc_type_location_class 'Industrial';
-EXEC report.proc_type_location_class 'Comercial';
-EXEC report.proc_type_location_class 'Residential';
-EXEC report.proc_type_location_class 'Rural';
+EXEC report.proc_insert_type_location_class 'Industrial';
+EXEC report.proc_insert_type_location_class 'Comercial';
+EXEC report.proc_insert_type_location_class 'Residential';
+EXEC report.proc_insert_type_location_class 'Rural';
+
+-- Business turnover classification data
+--
+CREATE OR ALTER PROCEDURE report.proc_insert_business_turnover_class
+	@name VARCHAR(50)
+AS
+	BEGIN TRY
+		DECLARE @tran_insert_business AS VARCHAR(45) = 'insert_business';
+		BEGIN TRANSACTION @tran_insert_business
+			IF (@name != '')
+				BEGIN
+					INSERT INTO report.business_turnover_class_table(business_turnover_name)
+					VALUES (report.CORRECT_GRAMMAR_IN_NAMES(@name));
+					PRINT CONCAT('The business turnover classification "', report.CORRECT_GRAMMAR_IN_NAMES(@name), '" was correctly saved in the database');
+					COMMIT TRANSACTION @tran_insert_business;
+				END;
+			ELSE IF (@name = '' OR @name IS NULL)
+				BEGIN
+					PRINT 'You cannot left the business turnover class name in blank';
+					ROLLBACK TRANSACTION @tran_insert_business;
+				END;
+	END TRY
+	BEGIN CATCH
+		PRINT CONCAT('Cannot insert the business turnover class "', report.CORRECT_GRAMMAR_IN_NAMES(@name), '" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		ROLLBACK TRANSACTION @tran_insert_business
+	END CATCH;
 
 -- Plant table data scripts
 --
@@ -303,17 +385,29 @@ AS
 					BEGIN
 						IF EXISTS(SELECT business_turnover_name FROM report.business_turnover_class_table WHERE business_turnover_name = @business_turnover)
 							BEGIN
-								IF EXISTS(SELECT id_merchandise_classification_type FROM report.merchandise_classification_type_table 
-																				WHERE merchandise_classification_type_name = @merchandise_classification)
-									SET @id_merchandise = (SELECT id_merchandise_classification_type FROM report.merchandise_classification_type_table
-																									WHERE merchandise_classification_type_name = @merchandise_classification);
-								ELSE
-									SET @id_merchandise = null;
+								IF ((SELECT TRY_CAST(@merchandise_classification AS INT)) IS NOT NULL)
+									BEGIN;
+										IF EXISTS(SELECT id_merchandise_classification_type FROM report.merchandise_classification_type_table 
+																						WHERE id_merchandise_classification_type = @merchandise_classification)
+											SET @id_merchandise = (SELECT id_merchandise_classification_type FROM report.merchandise_classification_type_table
+																											WHERE id_merchandise_classification_type = @merchandise_classification);
+										ELSE
+											SET @id_merchandise = null;
+									END;
+								ELSE IF ((SELECT TRY_CAST(@merchandise_classification AS INT)) IS NULL)
+									BEGIN
+										IF EXISTS(SELECT id_merchandise_classification_type FROM report.merchandise_classification_type_table
+																							WHERE merchandise_classification_type_name = UPPER(@merchandise_classification))
+											SET @id_merchandise = (SELECT id_merchandise_classification_type FROM report.merchandise_classification_type_table
+																											WHERE merchandise_classification_type_name = UPPER(@merchandise_classification));
+										ELSE
+											SET @id_merchandise = null;
+									END;
 							END;
 							INSERT INTO report.plant_table (plant_account_name, plant_name, plant_continent, plant_country, plant_country_state, 
 															plant_construction_year, plant_operation_startup_year, plant_address, plant_latitude, plant_longitude, 
 															plant_meters_above_sea_level, plant_certifications, plant_business_specific_turnover, plant_merchandise_class)
-															VALUES ((SELECT report.CORRECT_GRAMMAR_IN_NAMES(@account_name)), (SELECT report.CORRECT_GRAMMAR_IN_NAMES(@name)), @continent, (SELECT report.CORRECT_GRAMMAR_IN_NAMES(@country)), (SELECT report.CORRECT_GRAMMAR_IN_NAMES(@state)), @date_construction_year, @date_operation_startup,
+															VALUES (report.CORRECT_GRAMMAR_IN_NAMES(@account_name), report.CORRECT_GRAMMAR_IN_NAMES(@name), @continent, report.CORRECT_GRAMMAR_IN_NAMES(@country), report.CORRECT_GRAMMAR_IN_NAMES(@state), @date_construction_year, @date_operation_startup,
 																	@address, @latitude, @longitude, @meters_above_sea_level, @certifications, @specific_turnover, @id_merchandise);
 							BEGIN
 								IF (@type_location IS NOT NULL)
@@ -380,7 +474,7 @@ AS
 								VALUES ((SELECT MAX(id_plant) FROM report.plant_table),
 										(SELECT id_business_turnover FROM report.business_turnover_class_table WHERE business_turnover_name = @business_turnover))
 							END;
-							PRINT CONCAT('The plant "', @name, '" was correctly saved in the database');
+							PRINT CONCAT('The plant "', report.CORRECT_GRAMMAR_IN_NAMES(@name), '" was correctly saved in the database');
 						IF NOT EXISTS (SELECT business_turnover_name FROM report.business_turnover_class_table WHERE business_turnover_name = @business_turnover)
 							PRINT CONCAT('The business turnover"', @business_turnover ,'" does not match with any existing business turnover on the table');
 					END;
@@ -445,8 +539,8 @@ EXEC report.proc_insert_plant 'Industria de Tubos y Perfiles, S.A. - INTUPERSA',
 --
 CREATE OR ALTER PROCEDURE report.proc_insert_report
 	@date AS VARCHAR(20),
-	@id_client AS INT,
-	@id_plant AS INT,
+	@client AS VARCHAR(150),
+	@plant AS VARCHAR(150),
 	@prepared_by AS VARCHAR(250),
 	@installed_capacity AS VARCHAR(70),
 	@built_up AS FLOAT,
@@ -464,8 +558,26 @@ CREATE OR ALTER PROCEDURE report.proc_insert_report
 	@has_lighting_protection AS BIT
 AS
 	BEGIN TRY
-		IF EXISTS(SELECT id_client FROM report.client_table WHERE id_client = @id_client)
-			IF EXISTS(SELECT id_plant FROM report.plant_table WHERE id_plant = @id_plant)
+		DECLARE
+			@id_client AS INT,
+			@id_plant AS INT;
+		BEGIN
+			IF (@client IS NOT NULL)
+				BEGIN
+					IF ((SELECT TRY_CAST(@client AS INT)) IS NULL)
+						BEGIN
+							SET @id_client = ISNULL((SELECT id_client FROM report.client_table WHERE client_name = report.CORRECT_GRAMMAR_IN_NAMES(@client)), 0);
+						END;
+					ELSE IF((SELECT TRY_CAST(@client AS INT)) IS NOT NULL)
+						BEGIN
+							SET @id_client = ISNULL((SELECT id_client FROM report.client_table WHERE id_client = @client), 0);
+						END;
+				END;
+			ELSE IF (@client IS NULL)
+				SET @id_client = 0;
+		END;
+		IF (@id_client != 0)
+			IF (@id_plant != 0)
 				IF (@prepared_by IS NOT NULL)
 						IF (@date LIKE '%/%')
 							DECLARE 
@@ -489,20 +601,19 @@ AS
 												IF (@value_date >= 1 AND @value_date <= 31)
 													SET @day = @value_date
 										IF ((SELECT TRY_CAST(@value_date AS INT)) IS NULL)
-											SET @month = LOWER(@month);
 											SET @month = (SELECT CASE 
-																	WHEN @value_date = 'january' THEN 1
-																	WHEN @value_date = 'february' THEN 2
-																	WHEN @value_date = 'march' THEN 3
-																	WHEN @value_date = 'april' THEN 4
-																	WHEN @value_date = 'may' THEN 5
-																	WHEN @value_date = 'june' THEN 6
-																	WHEN @value_date = 'july' THEN 7
-																	WHEN @value_date = 'agost' THEN 8
-																	WHEN @value_date = 'september' THEN 9
-																	WHEN @value_date = 'october' THEN 10
-																	WHEN @value_date = 'november' THEN 11
-																	WHEN @value_date = 'december' THEN 12
+																	WHEN LOWER(@value_date) = 'january' THEN 1
+																	WHEN LOWER(@value_date) = 'february' THEN 2
+																	WHEN LOWER(@value_date) = 'march' THEN 3
+																	WHEN LOWER(@value_date) = 'april' THEN 4
+																	WHEN LOWER(@value_date) = 'may' THEN 5
+																	WHEN LOWER(@value_date) = 'june' THEN 6
+																	WHEN LOWER(@value_date) = 'july' THEN 7
+																	WHEN LOWER(@value_date) = 'agost' THEN 8
+																	WHEN LOWER(@value_date) = 'september' THEN 9
+																	WHEN LOWER(@value_date) = 'october' THEN 10
+																	WHEN LOWER(@value_date) = 'november' THEN 11
+																	WHEN LOWER(@value_date) = 'december' THEN 12
 																	ELSE 1
 																 END);
 										FETCH NEXT FROM cur_date INTO @value_date;
@@ -588,12 +699,14 @@ AS
 							BEGIN TRY
 								IF ((SELECT TRY_CAST(@value_capacity AS FLOAT)) IS NULL)
 									IF EXISTS(SELECT id_capacity_type FROM report.capacity_type_table WHERE capacity_type_name = @value_capacity)
-										SET @installed_capacity_id = (SELECT id_capacity_type FROM report.capacity_type_table
-																								WHERE capacity_type_name = @value_capacity);
+										SET @installed_capacity_id = ISNULL((SELECT id_capacity_type FROM report.capacity_type_table
+																								WHERE capacity_type_name = @value_capacity), NULL);
 									ELSE
 										PRINT CONCAT('The capacity type ("', @value_capacity, '") was not found in the capacity type table');
 								IF ((SELECT TRY_CAST(@value_capacity AS FLOAT)) IS NOT NULL)
 									SET @installed_capacity_value = @value_capacity;
+								ELSE
+									SET @installed_capacity = 0;
 							FETCH NEXT FROM cur_capacity INTO @value_capacity
 							END TRY
 							BEGIN CATCH
@@ -604,7 +717,7 @@ AS
 						CLOSE cur_capacity;
 						DEALLOCATE cur_capacity;
 					
-					DECLARE @built_up_save AS FLOAT = IIF(@built_up IS NULL, 0.00, @built_up);
+					DECLARE @built_up_save AS FLOAT = ISNULL(@built_up, 0);
 
 					DECLARE @exposures_save AS FLOAT;
 					IF (@exposures IS NOT NULL)
@@ -616,12 +729,12 @@ AS
 								SET @exposures_save = 0.0
 						IF ((SELECT TRY_CAST(@exposures AS FLOAT)) IS NULL)
 							SET @exposures_save = (SELECT CASE
-															WHEN @exposures = 'None' THEN 0.0
-															WHEN @exposures = 'Light' THEN 1.0
-															WHEN @exposures = 'Light/Moderate' THEN 1.5
-															WHEN @exposures = 'Moderate' THEN 2.0
-															WHEN @exposures = 'Moderate/Severe' THEN 2.5
-															WHEN @exposures = 'Severe' THEN 3.0
+															WHEN LOWER(@exposures) = 'none' THEN 0.0
+															WHEN LOWER(@exposures) = 'light' THEN 1.0
+															WHEN LOWER(@exposures) = 'light/moderate' THEN 1.5
+															WHEN LOWER(@exposures) = 'moderate' THEN 2.0
+															WHEN LOWER(@exposures) = 'moderate/severe' THEN 2.5
+															WHEN LOWER(@exposures) = 'severe' THEN 3.0
 															ELSE 0.0
 														END);
 					ELSE
@@ -697,29 +810,29 @@ AS
 								SET @id_hydrant_standpipe_class_to_save = NULL;
 						IF ((SELECT TRY_CAST(@hydrant_standpipe_class AS INT)) IS NULL)
 							IF EXISTS(SELECT id_hydrant_standpipe_system_class FROM report.hydrant_standpipe_system_class_table 
-																				WHERE hydrant_standpipe_system_class_name = @hydrant_standpipe_class)
+																				WHERE hydrant_standpipe_system_class_name = UPPER(@hydrant_standpipe_class))
 								SET @id_hydrant_standpipe_class_to_save = (SELECT id_hydrant_standpipe_system_class FROM report.hydrant_standpipe_system_class_table 
-																													WHERE hydrant_standpipe_system_class_name = @hydrant_standpipe_class);
+																													WHERE hydrant_standpipe_system_class_name = UPPER(@hydrant_standpipe_class));
 							IF NOT EXISTS(SELECT id_hydrant_standpipe_system_class FROM report.hydrant_standpipe_system_class_table 
-																				WHERE hydrant_standpipe_system_class_name = @hydrant_standpipe_class)
+																				WHERE hydrant_standpipe_system_class_name = UPPER(@hydrant_standpipe_class))
 								SET @id_hydrant_standpipe_class_to_save = NULL
-								PRINT CONCAT('The hydrant standpipe system class (', @hydrant_standpipe_class, ') was not found in the hydrant standpipe class table.')
+								PRINT CONCAT('The hydrant standpipe system class (', UPPER(@hydrant_standpipe_class), ') was not found in the hydrant standpipe class table.')
 					IF (@hydrant_standpipe_class IS NULL OR @hydrant_standpipe_class = '')
 						SET @id_hydrant_standpipe_class_to_save = NULL
 
-					DECLARE @has_foam_suppression_sys_to_save AS BIT = IIF(@has_foam_suppression IS NULL, 0, @has_foam_suppression);
+					DECLARE @has_foam_suppression_sys_to_save AS BIT = ISNULL(@has_foam_suppression, 0);
 
-					DECLARE @has_suppression_to_save AS BIT = IIF(@has_suppression IS NULL, 0, @has_suppression);
+					DECLARE @has_suppression_to_save AS BIT = ISNULL(@has_suppression, 0);
 
-					DECLARE @has_sprinklers_to_save AS BIT = IIF(@has_sprinklers IS NULL, 0, @has_sprinklers);
+					DECLARE @has_sprinklers_to_save AS BIT = ISNULL(@has_sprinklers, 0);
 
-					DECLARE @has_afds_to_save AS BIT = IIF(@has_afds IS NULL, 0, @has_afds);
+					DECLARE @has_afds_to_save AS BIT = ISNULL(@has_afds, 0);
 
-					DECLARE @has_fire_detetion_batteries_to_save AS BIT = IIF(@has_fire_detection_batteries IS NULL, 0, @has_fire_detection_batteries);
+					DECLARE @has_fire_detetion_batteries_to_save AS BIT = ISNULL(@has_fire_detection_batteries, 0);
 
-					DECLARE @has_private_brigade_to_save AS BIT = IIF(@has_private_brigade IS NULL, 0, @has_private_brigade);
+					DECLARE @has_private_brigade_to_save AS BIT = ISNULL(@has_private_brigade, 0);
 
-					DECLARE @has_lighting_protection_to_save AS BIT = IIF(@has_lighting_protection IS NULL, 0, @has_lighting_protection);
+					DECLARE @has_lighting_protection_to_save AS BIT = ISNULL(@has_lighting_protection, 0);
 
 					BEGIN TRY
 							INSERT INTO report.plant_parameters(id_report, id_plant, plant_parameters_installed_capacity, id_capacity_type, plant_parameters_built_up, plant_parameters_exposures,
@@ -738,9 +851,9 @@ AS
 
 				IF (@prepared_by IS NULL)
 					PRINT 'Cannot leave the engineer field empty.';
-			IF NOT EXISTS(SELECT id_plant FROM report.plant_table WHERE id_plant = @id_plant)
+			IF (@id_plant = 0)
 				PRINT CONCAT('The id (', @id_plant,') was not found in the plant table.');
-		IF NOT EXISTS(SELECT id_client FROM report.client_table WHERE id_client = @id_client)
+		IF (@id_client = 0)
 			PRINT CONCAT('The id (', @id_client, ') was not found in the client table.');
 	END TRY
 	BEGIN CATCH
@@ -753,4 +866,4 @@ DELETE FROM report.report_table WHERE id_report = 1004;
 DELETE FROM report.report_preparation_table WHERE id_report_preparation = 1004;
 DELETE FROM report.plant_parameters WHERE id_plant_parameters = 1001;
 
-EXEC report.proc_insert_report '1/november/2019', 1000, 1029, '1000', '240000.00,units/Month', 12850.00, 'Light', 1, null, null, null, 0, 0, 0, 1, 0, 1, 1;
+EXEC report.proc_insert_report '1/november/2019', '1000', '1029', '1000', '240000.00,units/Month', 12850.00, 'Light', 1, null, null, null, 0, 0, 0, 1, 0, 1, 1;
