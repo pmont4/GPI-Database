@@ -430,16 +430,6 @@ AS
 		ROLLBACK TRANSACTION @tran_insert_business
 	END CATCH;
 --
--- Executable insertion business turnover class data
-
-EXEC report.proc_insert_business_turnover_class 'Production';
-EXEC report.proc_insert_business_turnover_class 'Electricity generation';
-EXEC report.proc_insert_business_turnover_class 'Storage';
-EXEC report.proc_insert_business_turnover_class 'Distribution';
-EXEC report.proc_insert_business_turnover_class 'Real state';
-EXEC report.proc_insert_business_turnover_class 'Retail';
-EXEC report.proc_insert_business_turnover_class 'Aeronautical revenue';
-EXEC report.proc_insert_business_turnover_class 'Production and electricity generation';
 
 -- Plant table data scripts
 --

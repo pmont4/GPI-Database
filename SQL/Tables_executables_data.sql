@@ -26,6 +26,34 @@ EXEC report.proc_insert_client 'Seguros Universales S.A.';
 -- Name of the type
 
 EXEC report.proc_insert_capacity_type 'Tons / year';
+EXEC report.proc_insert_capacity_type 'Kilograms/Month';
+EXEC report.proc_insert_capacity_type 'Metric tons/Hour';
+EXEC report.proc_insert_capacity_type 'Metric tons/Day';
+EXEC report.proc_insert_capacity_type 'Metric tons/Year';
+EXEC report.proc_insert_capacity_type 'Metric tons/Month';
+EXEC report.proc_insert_capacity_type 'Liters/year';
+EXEC report.proc_insert_capacity_type 'Hectoliters/Year';
+EXEC report.proc_insert_capacity_type 'Short tons/Day';
+EXEC report.proc_insert_capacity_type 'Pounds/Week';
+EXEC report.proc_insert_capacity_type 'Tons/Hour';
+EXEC report.proc_insert_capacity_type 'Tons/Day';
+EXEC report.proc_insert_capacity_type 'Tons/Month';
+EXEC report.proc_insert_capacity_type 'qq/Day';
+EXEC report.proc_insert_capacity_type 'qq/Hour';
+EXEC report.proc_insert_capacity_type 'units/Week';
+EXEC report.proc_insert_capacity_type 'units/Month';
+EXEC report.proc_insert_capacity_type 'MW';
+EXEC report.proc_insert_capacity_type 'KVA';
+EXEC report.proc_insert_capacity_type 'Flights/Month';
+EXEC report.proc_insert_capacity_type 'Board foot/Month';
+EXEC report.proc_insert_capacity_type 'Parking/Locals';
+EXEC report.proc_insert_capacity_type 'People';
+EXEC report.proc_insert_capacity_type 'Barrels';
+EXEC report.proc_insert_capacity_type 'Bins/Pallets';
+EXEC report.proc_insert_capacity_type 'Seats';
+EXEC report.proc_insert_capacity_type 'Tons';
+EXEC report.proc_insert_capacity_type 'Metric tons';
+
 
 -- Merchandise classification table executables for data insertion
 -- Data is being inserted in the following order
