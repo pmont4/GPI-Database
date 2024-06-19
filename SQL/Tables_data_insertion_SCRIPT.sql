@@ -149,6 +149,42 @@ AS
 			SET @to_return = GETDATE();
 		RETURN @to_return;
 	END;
+
+CREATE OR ALTER FUNCTION report.DETERMINATE_RATE_OF_RISK(@rate AS VARCHAR(20))
+RETURNS FLOAT
+AS
+	BEGIN
+		SET @rate = report.REMOVE_EXTRA_SPACES(@rate);
+
+		DECLARE @to_return AS FLOAT;
+		IF (@rate IS NULL)
+			SET @to_return = 0.0;
+		IF ((SELECT TRY_CAST(@rate AS FLOAT)) IS NULL)
+			BEGIN
+				SET @to_return = (SELECT CASE
+											WHEN LOWER(@rate) = 'none' THEN 0.0
+											WHEN LOWER(@rate) = 'light' THEN 1.0
+											WHEN LOWER(@rate) = 'light/moderate' THEN 1.5
+											WHEN LOWER(@rate) = 'moderate' THEN 2.0
+											WHEN LOWER(@rate) = 'moderate/severe' THEN 2.5
+											WHEN LOWER(@rate) = 'severe' THEN 3.0
+											ELSE 0.0
+										END);
+			END;
+		ELSE IF ((SELECT TRY_CAST(@rate AS FLOAT)) IS NOT NULL)
+			BEGIN
+				SET @to_return = (SELECT CASE
+											WHEN CAST(@rate AS FLOAT(2)) >= 0.0 AND CAST(@rate AS FLOAT(2)) <= 1.0 THEN 0.0
+											WHEN CAST(@rate AS FLOAT(2)) >= 1.0 AND CAST(@rate AS FLOAT(2)) < 1.5 THEN 1.0
+											WHEN CAST(@rate AS FLOAT(2)) >= 1.5 AND CAST(@rate AS FLOAT(2)) < 2.0 THEN 1.5
+											WHEN CAST(@rate AS FLOAT(2)) >= 2.0 AND CAST(@rate AS FLOAT(2)) < 2.5 THEN 2.0
+											WHEN CAST(@rate AS FLOAT(2)) >= 2.5 AND CAST(@rate AS FLOAT(2)) < 3.0 THEN 2.5
+											WHEN CAST(@rate AS FLOAT(2)) >= 3.0 THEN 3.0
+											ELSE 0.0
+										END);
+			END;
+		RETURN @to_return;
+	END;
 -- ------------------------------------
 
 -- Engineer insertion data scripts.
@@ -645,11 +681,6 @@ AFTER INSERT AS
 	CLOSE cur;
 	DEALLOCATE cur;
 --
--- Executable insertion plant data
-
-EXEC report.proc_insert_plant 'TATA - Accesorios Globales, S.A.', null, 'C.A.', 'Guatemala', 'Guatemala', 1985, 1985, null, 'Production', 'Manufacture of natural and synthetic leather belts for export', 'III', 'Industrial,Residential', '2ª. Calle 1-11 y 1-25 Zona 8, Granjas Gerona, San Miguel Petapa, Guatemala, C.A.', 14.533944, -90.593765, 1274;
-EXEC report.proc_insert_plant 'Sidegua Steel Park', null, 'C.A.', 'Guatemala', 'Escuintla', 1991, 1994, 'ASTM, COGUANOR, ACI, INTECO', 'Production', 'Steel Casting', '0','Industrial,Rural', 'Km 65.5 CA9-A Highway, Masagua, Escuintla, Guatemala, C.A.', 14.533944, -90.593765, 1274;
-EXEC report.proc_insert_plant 'Industria de Tubos y Perfiles, S.A. - INTUPERSA', null, 'C.A.', 'Guatemala', 'Guatemala', 1961, 1961, null, 'Production', 'Manufacturing and commercialization of steel pipes and profiles', 'I','Industrial,Residential', '9ª. Avenida 3-17 Z.2 Mixco, Colonia Alvarado, Guatemala, Guatemala', 14.628646, -90.578844, 1596;
 
 -- Report table data scripts
 --
@@ -908,48 +939,9 @@ AS
 		PRINT CONCAT('Cannot insert the report due to this error (', ERROR_MESSAGE(), ')');
 	END CATCH;
 --
--- Executable insertion report data
-
-EXEC report.proc_insert_report '1/november/2019', '1000', '1029', '1000', '240000.00,units/Month', 12850.00, 'Light', 1, null, null, null, 0, 0, 0, 1, 0, 1, 1;
 
 -- Perils and risk table data scripts
 --
-CREATE OR ALTER FUNCTION report.DETERMINATE_RATE_OF_RISK(@rate AS VARCHAR(20))
-RETURNS FLOAT
-AS
-	BEGIN
-		SET @rate = report.REMOVE_EXTRA_SPACES(@rate);
-
-		DECLARE @to_return AS FLOAT;
-		IF (@rate IS NULL)
-			SET @to_return = 0.0;
-		IF ((SELECT TRY_CAST(@rate AS FLOAT)) IS NULL)
-			BEGIN
-				SET @to_return = (SELECT CASE
-											WHEN LOWER(@rate) = 'none' THEN 0.0
-											WHEN LOWER(@rate) = 'light' THEN 1.0
-											WHEN LOWER(@rate) = 'light/moderate' THEN 1.5
-											WHEN LOWER(@rate) = 'moderate' THEN 2.0
-											WHEN LOWER(@rate) = 'moderate/severe' THEN 2.5
-											WHEN LOWER(@rate) = 'severe' THEN 3.0
-											ELSE 0.0
-										END);
-			END;
-		ELSE IF ((SELECT TRY_CAST(@rate AS FLOAT)) IS NOT NULL)
-			BEGIN
-				SET @to_return = (SELECT CASE
-											WHEN CAST(@rate AS FLOAT(2)) >= 0.0 AND CAST(@rate AS FLOAT(2)) <= 1.0 THEN 0.0
-											WHEN CAST(@rate AS FLOAT(2)) >= 1.0 AND CAST(@rate AS FLOAT(2)) < 1.5 THEN 1.0
-											WHEN CAST(@rate AS FLOAT(2)) >= 1.5 AND CAST(@rate AS FLOAT(2)) < 2.0 THEN 1.5
-											WHEN CAST(@rate AS FLOAT(2)) >= 2.0 AND CAST(@rate AS FLOAT(2)) < 2.5 THEN 2.0
-											WHEN CAST(@rate AS FLOAT(2)) >= 2.5 AND CAST(@rate AS FLOAT(2)) < 3.0 THEN 2.5
-											WHEN CAST(@rate AS FLOAT(2)) >= 3.0 THEN 3.0
-											ELSE 0.0
-										END);
-			END;
-		RETURN @to_return;
-	END;
-
 CREATE OR ALTER PROCEDURE report.proc_insert_perils_and_risk_table
 	@id_report AS INT,
 	@plant AS VARCHAR(100),
@@ -998,9 +990,6 @@ AS
 		ROLLBACK TRANSACTION @tran_insert_perils_and_risk;
 	END CATCH;
 --
--- Executable insertion perils and risk data
-
-EXEC report.proc_insert_perils_and_risk_table 1005, '1029', '2.5', 'light', 'light', '2', 'severe', null, 'none', '0', 'light', '1', 'LIGHT ', 'lIgHt';
 
 -- Loss scenario table data scripts
 --
@@ -1094,6 +1083,3 @@ AS
 		ROLLBACK TRANSACTION @tran_insert_loss_scenario;
 	END CATCH;
 --
--- Executable loss scenario data insertion
-
-EXEC report.proc_insert_loss_scenario_table 1005, 1000, 1029, 15963716.63, 85, 9129876, 75, 2343287.10, 3620429.53, null, null, 0, 25093592.63, 82, null;
