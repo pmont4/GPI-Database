@@ -25,40 +25,56 @@ AS
 		RETURN @output;
 	END;
 
-CREATE OR ALTER FUNCTION report.CORRECT_GRAMMAR_IN_NAMES(@text VARCHAR(150))
+CREATE OR ALTER FUNCTION report.CORRECT_GRAMMAR(@text VARCHAR(150), @type_text VARCHAR(10))
 RETURNS VARCHAR(150)
 AS
 	BEGIN
+		DECLARE @type AS VARCHAR(10) = (SELECT CASE
+												WHEN LOWER(@type_text) = 'name' THEN 'name'
+												WHEN LOWER(@type_text) = 'paragraph' THEN 'paragraph'
+												ELSE 'paragraph'
+											END);
+
 		DECLARE @toReturn AS VARCHAR(100);
-		IF (@text LIKE '% %')
+		IF (@type = 'name')
+			BEGIN
+				IF (@text LIKE '% %')
+					BEGIN
+						SET @text = report.REMOVE_EXTRA_SPACES(@text);
+
+						DECLARE @text_value AS VARCHAR(50);
+						DECLARE text_cur CURSOR DYNAMIC FORWARD_ONLY
+										FOR SELECT * FROM STRING_SPLIT(@text, ' ');
+						OPEN text_cur;
+						FETCH NEXT FROM text_cur INTO @text_value;
+						WHILE @@FETCH_STATUS = 0
+							BEGIN
+								IF (@toReturn IS NULL) SET @toReturn = '';
+						
+								IF (UPPER(@text_value) = 'S.A.')
+									SET @toReturn = CONCAT(@toReturn, UPPER(@text_value));
+
+								SET @toReturn = CONCAT(@ToReturn, UPPER(LEFT(@text_value, 1)),
+														LOWER(RIGHT(@text_value, LEN(@text_value) -1)), ' ');
+								FETCH NEXT FROM text_cur INTO @text_value;
+							END;
+						CLOSE text_cur;
+						DEALLOCATE text_cur;
+					END;
+				ELSE IF (@text NOT LIKE '% %')
+					BEGIN
+						SET @text = TRIM(@text);
+
+						SET @toReturn = CONCAT(UPPER(LEFT(@text, 1)),
+											LOWER(RIGHT(@text, LEN(@text) -1)));
+					END;
+			END;
+		ELSE IF (@type = 'paragraph')
 			BEGIN
 				SET @text = report.REMOVE_EXTRA_SPACES(@text);
-
-				DECLARE @text_value AS VARCHAR(50);
-				DECLARE text_cur CURSOR DYNAMIC FORWARD_ONLY
-								FOR SELECT * FROM STRING_SPLIT(@text, ' ');
-				OPEN text_cur;
-				FETCH NEXT FROM text_cur INTO @text_value;
-				WHILE @@FETCH_STATUS = 0
-					BEGIN
-						IF (@toReturn IS NULL) SET @toReturn = '';
-						
-						IF (UPPER(@text_value) = 'S.A.')
-							SET @toReturn = CONCAT(@toReturn, UPPER(@text_value));
-
-						SET @toReturn = CONCAT(@ToReturn, UPPER(LEFT(@text_value, 1)),
-												LOWER(RIGHT(@text_value, LEN(@text_value) -1)), ' ');
-						FETCH NEXT FROM text_cur INTO @text_value;
-					END;
-				CLOSE text_cur;
-				DEALLOCATE text_cur;
-			END;
-		ELSE IF (@text NOT LIKE '% %')
-			BEGIN
-				SET @text = TRIM(@text);
-
-				SET @toReturn = CONCAT(UPPER(LEFT(@text, 1)),
+				SET @text = CONCAT(UPPER(LEFT(@text, 1)),
 									LOWER(RIGHT(@text, LEN(@text) -1)));
+				SET @toReturn = @text;
 			END;
 		RETURN @ToReturn;
 	END;
@@ -82,7 +98,6 @@ AS
 					SET @char_to_separate = (SELECT CASE
 														WHEN @date_to_parse LIKE '%/%' THEN '/'
 														WHEN @date_to_parse LIKE '%-%' THEN '-'
-														ELSE '/'
 													END);
 
 					DECLARE @value AS VARCHAR(20);
@@ -128,7 +143,7 @@ AS
 					DEALLOCATE cur_date;
 					SET @to_return = DATEFROMPARTS(@year, @day, @month);
 				END;
-			ELSE
+			ELSE 
 				SET @to_return = GETDATE();
 		ELSE
 			SET @to_return = GETDATE();
@@ -148,8 +163,8 @@ AS
 			IF (@name != '')
 				BEGIN
 					INSERT INTO report.engineer_table (engineer_name, engineer_contact)
-					VALUES (report.CORRECT_GRAMMAR_IN_NAMES(@name), @contact);
-					PRINT CONCAT('The engineer "', report.CORRECT_GRAMMAR_IN_NAMES(@name), '" was correctly saved in the database');
+					VALUES (report.CORRECT_GRAMMAR(@name, 'name'), @contact);
+					PRINT CONCAT('The engineer "', report.CORRECT_GRAMMAR(@name, 'name'), '" was correctly saved in the database');
 					COMMIT TRANSACTION @tran_insert_engineer;
 				END;
 			ELSE IF (@name = '' OR @name IS NULL)
@@ -159,7 +174,7 @@ AS
 				END;
 	END TRY
 	BEGIN CATCH
-		PRINT CONCAT('Cannot insert the engineer "', report.CORRECT_GRAMMAR_IN_NAMES(@name),'" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		PRINT CONCAT('Cannot insert the engineer "', report.CORRECT_GRAMMAR(@name, 'name'),'" in the database due to this error: (', ERROR_MESSAGE(), ')');
 		ROLLBACK TRANSACTION @tran_insert_engineer;
 	END CATCH;
 --
@@ -178,8 +193,8 @@ AS
 			IF (@name != '')
 				BEGIN
 					INSERT INTO report.client_table(client_name)
-					VALUES (report.CORRECT_GRAMMAR_IN_NAMES(@name));
-					PRINT CONCAT('The client "', report.CORRECT_GRAMMAR_IN_NAMES(@name), '" was correctly saved in the database');
+					VALUES (report.CORRECT_GRAMMAR(@name, 'name'));
+					PRINT CONCAT('The client "', report.CORRECT_GRAMMAR(@name, 'name'), '" was correctly saved in the database');
 					COMMIT TRANSACTION @tran_insert_client;
 				END;
 			ELSE IF (@name = '' OR @name IS NULL)
@@ -189,7 +204,7 @@ AS
 				END;
 	END TRY
 	BEGIN CATCH 
-		PRINT CONCAT('Cannot insert the client "', report.CORRECT_GRAMMAR_IN_NAMES(@name), '" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		PRINT CONCAT('Cannot insert the client "', report.CORRECT_GRAMMAR(@name, 'name'), '" in the database due to this error: (', ERROR_MESSAGE(), ')');
 		ROLLBACK TRANSACTION @tran_insert_client;
 	END CATCH;
 --
@@ -271,8 +286,8 @@ AS
 			IF (@name != '')
 				BEGIN
 					INSERT INTO report.hydrant_protection_classification_table(hydrant_protection_classification_name)
-					VALUES (report.CORRECT_GRAMMAR_IN_NAMES(@name));
-					PRINT CONCAT('The hydrant protection class "', report.CORRECT_GRAMMAR_IN_NAMES(@name), '" was correctly saved in the database');
+					VALUES (report.CORRECT_GRAMMAR(@name, 'name'));
+					PRINT CONCAT('The hydrant protection class "', report.CORRECT_GRAMMAR(@name, 'name'), '" was correctly saved in the database');
 					COMMIT TRANSACTION @tran_insert_hydrant_protection_class;
 				END;
 			ELSE IF (@name = '' OR @name IS NULL)
@@ -282,7 +297,7 @@ AS
 				END;
 	END TRY
 	BEGIN CATCH
-		PRINT CONCAT('Cannot insert the hydrant protection class "', report.CORRECT_GRAMMAR_IN_NAMES(@name),'" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		PRINT CONCAT('Cannot insert the hydrant protection class "', report.CORRECT_GRAMMAR(@name, 'name'),'" in the database due to this error: (', ERROR_MESSAGE(), ')');
 		ROLLBACK TRANSACTION @tran_insert_hydrant_protection_class;
 	END CATCH;
 --
@@ -303,8 +318,8 @@ AS
 			IF (@name != '')
 				BEGIN
 					INSERT INTO report.hydrant_standpipe_system_type_table(hydrant_standpipe_system_type_name)
-					VALUES (report.CORRECT_GRAMMAR_IN_NAMES(@name));
-					PRINT CONCAT('The hydrant standpipe type "', report.CORRECT_GRAMMAR_IN_NAMES(@name), '" was correctly saved in the database');
+					VALUES (report.CORRECT_GRAMMAR(@name, 'name'));
+					PRINT CONCAT('The hydrant standpipe type "', report.CORRECT_GRAMMAR(@name, 'name'), '" was correctly saved in the database');
 					COMMIT TRANSACTION @tran_insert_hydrant_standpipe_type;
 				END;
 			ELSE IF (@name = '' OR @name IS NULL)
@@ -314,7 +329,7 @@ AS
 				END;
 	END TRY
 	BEGIN CATCH
-		PRINT CONCAT('Cannot insert the hydrant standpipe type  "', report.CORRECT_GRAMMAR_IN_NAMES(@name),'" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		PRINT CONCAT('Cannot insert the hydrant standpipe type  "', report.CORRECT_GRAMMAR(@name, 'name'),'" in the database due to this error: (', ERROR_MESSAGE(), ')');
 		ROLLBACK TRANSACTION @tran_insert_hydrant_standpipe_type;
 	END CATCH;
 --
@@ -369,8 +384,8 @@ AS
 			IF (@name != '')
 				BEGIN
 					INSERT INTO report.type_location_classification_table(type_location_class_name)
-					VALUES (report.CORRECT_GRAMMAR_IN_NAMES(@name));
-					PRINT CONCAT('The type location class "', report.CORRECT_GRAMMAR_IN_NAMES(@name), '" was correctly saved in the database');
+					VALUES (report.CORRECT_GRAMMAR(@name, 'name'));
+					PRINT CONCAT('The type location class "', report.CORRECT_GRAMMAR(@name, 'name'), '" was correctly saved in the database');
 					COMMIT TRANSACTION @tran_insert_type_location_class
 				END;
 			ELSE IF (@name = '' OR @name IS NULL)
@@ -380,7 +395,7 @@ AS
 				END;
 	END TRY
 	BEGIN CATCH
-		PRINT CONCAT('Cannot insert the type location class  "', report.CORRECT_GRAMMAR_IN_NAMES(@name),'" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		PRINT CONCAT('Cannot insert the type location class  "', report.CORRECT_GRAMMAR(@name, 'name'),'" in the database due to this error: (', ERROR_MESSAGE(), ')');
 		ROLLBACK TRANSACTION @tran_insert_type_location_class;
 	END CATCH;
 --
@@ -402,8 +417,8 @@ AS
 			IF (@name != '')
 				BEGIN
 					INSERT INTO report.business_turnover_class_table(business_turnover_name)
-					VALUES (report.CORRECT_GRAMMAR_IN_NAMES(@name));
-					PRINT CONCAT('The business turnover classification "', report.CORRECT_GRAMMAR_IN_NAMES(@name), '" was correctly saved in the database');
+					VALUES (report.CORRECT_GRAMMAR(@name, 'paragraph'));
+					PRINT CONCAT('The business turnover classification "', report.CORRECT_GRAMMAR(@name, 'paragraph'), '" was correctly saved in the database');
 					COMMIT TRANSACTION @tran_insert_business;
 				END;
 			ELSE IF (@name = '' OR @name IS NULL)
@@ -413,9 +428,20 @@ AS
 				END;
 	END TRY
 	BEGIN CATCH
-		PRINT CONCAT('Cannot insert the business turnover class "', report.CORRECT_GRAMMAR_IN_NAMES(@name), '" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		PRINT CONCAT('Cannot insert the business turnover class "', report.CORRECT_GRAMMAR(@name, 'paragraph'), '" in the database due to this error: (', ERROR_MESSAGE(), ')');
 		ROLLBACK TRANSACTION @tran_insert_business
 	END CATCH;
+--
+-- Executable insertion business turnover class data
+
+EXEC report.proc_insert_business_turnover_class 'Production';
+EXEC report.proc_insert_business_turnover_class 'Electricity generation';
+EXEC report.proc_insert_business_turnover_class 'Storage';
+EXEC report.proc_insert_business_turnover_class 'Distribution';
+EXEC report.proc_insert_business_turnover_class 'Real state';
+EXEC report.proc_insert_business_turnover_class 'Retail';
+EXEC report.proc_insert_business_turnover_class 'Aeronautical revenue';
+EXEC report.proc_insert_business_turnover_class 'Production and electricity generation';
 
 -- Plant table data scripts
 --
@@ -457,7 +483,16 @@ AS
 						SET @date_construction_year = NULL;
 
 					BEGIN
-						IF EXISTS(SELECT business_turnover_name FROM report.business_turnover_class_table WHERE business_turnover_name = @business_turnover)
+						DECLARE @id_business_turnover_to_insert AS INT;
+						IF ((SELECT TRY_CAST(@business_turnover AS INT)) IS NULL)
+							BEGIN
+								SET @id_business_turnover_to_insert = ISNULL((SELECT id_business_turnover FROM report.business_turnover_class_table WHERE business_turnover_name = report.CORRECT_GRAMMAR(@business_turnover, 'paragraph')), NULL)
+							END;
+						ELSE IF ((SELECT TRY_CAST(@business_turnover AS INT)) IS NOT NULL)
+							BEGIN
+								SET @id_business_turnover_to_insert = ISNULL((SELECT id_business_turnover FROM report.business_turnover_class_table WHERE id_business_turnover = CAST(@business_turnover AS INT)), null);
+							END;
+						IF (@id_business_turnover_to_insert IS NOT NULL)
 							BEGIN
 								IF ((SELECT TRY_CAST(@merchandise_classification AS INT)) IS NOT NULL)
 									BEGIN;
@@ -481,7 +516,7 @@ AS
 							INSERT INTO report.plant_table (plant_account_name, plant_name, plant_continent, plant_country, plant_country_state, 
 															plant_construction_year, plant_operation_startup_year, plant_address, plant_latitude, plant_longitude, 
 															plant_meters_above_sea_level, plant_certifications, plant_business_specific_turnover, plant_merchandise_class)
-															VALUES (report.CORRECT_GRAMMAR_IN_NAMES(@account_name), report.CORRECT_GRAMMAR_IN_NAMES(@name), @continent, report.CORRECT_GRAMMAR_IN_NAMES(@country), report.CORRECT_GRAMMAR_IN_NAMES(@state), @date_construction_year, @date_operation_startup,
+															VALUES (report.CORRECT_GRAMMAR(@account_name, 'name'), report.CORRECT_GRAMMAR(@name, 'name'), @continent, report.CORRECT_GRAMMAR(@country, 'name'), report.CORRECT_GRAMMAR(@state, 'name'), @date_construction_year, @date_operation_startup,
 																	@address, @latitude, @longitude, @meters_above_sea_level, @certifications, @specific_turnover, @id_merchandise);
 							BEGIN
 								IF (@type_location IS NOT NULL)
@@ -499,12 +534,12 @@ AS
 													BEGIN TRANSACTION
 														IF ((SELECT TRY_CAST(@val AS INT)) IS NULL)
 															IF EXISTS(SELECT type_location_class_name FROM report.type_location_classification_table 
-																										WHERE type_location_class_name = report.CORRECT_GRAMMAR_IN_NAMES(@val))
+																										WHERE type_location_class_name = report.CORRECT_GRAMMAR(@val, 'name'))
 																INSERT INTO report.type_location_table (id_plant, id_type_location_class)
 																VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
-																		(SELECT id_type_location_class FROM report.type_location_classification_table WHERE type_location_class_name = report.CORRECT_GRAMMAR_IN_NAMES(@val)));
+																		(SELECT id_type_location_class FROM report.type_location_classification_table WHERE type_location_class_name = report.CORRECT_GRAMMAR(@val, 'name')));
 															ELSE
-																PRINT CONCAT('No values found in type location table for "', @val, '"');
+																PRINT CONCAT('No values found in type location table for "', report.CORRECT_GRAMMAR(@val, 'name'), '"');
 														IF ((SELECT TRY_CAST(@val AS INT)) IS NOT NULL)
 															IF EXISTS(SELECT id_type_location_class FROM report.type_location_classification_table
 																									WHERE id_type_location_class = @val)
@@ -531,9 +566,9 @@ AS
 																						WHERE type_location_class_name = @type_location)
 												INSERT INTO report.type_location_table (id_plant, id_type_location_class)
 																VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
-																		(SELECT id_type_location_class FROM report.type_location_classification_table WHERE type_location_class_name = @type_location));
+																		(SELECT id_type_location_class FROM report.type_location_classification_table WHERE type_location_class_name = report.CORRECT_GRAMMAR(@type_location, 'name')));
 											ELSE
-												PRINT CONCAT('No values found in type location table for "', @type_location, '"');
+												PRINT CONCAT('No values found in type location table for "', report.CORRECT_GRAMMAR(@type_location, 'name'), '"');
 										IF ((SELECT TRY_CAST(@type_location AS INT)) IS NOT NULL)
 											IF EXISTS(SELECT id_type_location_class FROM report.type_location_classification_table
 																						WHERE id_type_location_class = @type_location)
@@ -544,13 +579,14 @@ AS
 												PRINT CONCAT('No values found in type location table for the ID "', @type_location, '"');
 							END;
 							BEGIN
-								INSERT INTO report.business_turnover_table (id_plant, id_business_turnover)
-								VALUES ((SELECT MAX(id_plant) FROM report.plant_table),
-										(SELECT id_business_turnover FROM report.business_turnover_class_table WHERE business_turnover_name = @business_turnover))
+								IF (@id_business_turnover_to_insert IS NOT NULL)
+									INSERT INTO report.business_turnover_table (id_plant, id_business_turnover)
+									VALUES ((SELECT MAX(id_plant) FROM report.plant_table),
+											@id_business_turnover_to_insert);
 							END;
-							PRINT CONCAT('The plant "', report.CORRECT_GRAMMAR_IN_NAMES(@name), '" was correctly saved in the database');
-						IF NOT EXISTS (SELECT business_turnover_name FROM report.business_turnover_class_table WHERE business_turnover_name = @business_turnover)
-							PRINT CONCAT('The business turnover"', @business_turnover ,'" does not match with any existing business turnover on the table');
+							PRINT CONCAT('The plant "', report.CORRECT_GRAMMAR(@name, 'paragraph'), '" was correctly saved in the database');
+						IF (@id_business_turnover_to_insert IS NULL)
+							PRINT CONCAT('The business turnover "', @business_turnover ,'" does not match with any existing business turnover on the table');
 					END;
 				END;
 			ELSE
@@ -558,7 +594,7 @@ AS
 		END;
 	END TRY
 	BEGIN CATCH
-		PRINT CONCAT('Cannot insert the plant  "', @name,'" in the database due to this error: (', ERROR_MESSAGE(), ')');
+		PRINT CONCAT('Cannot insert the plant  "', report.CORRECT_GRAMMAR(@name, 'name'),'" in the database due to this error: (', ERROR_MESSAGE(), ')');
 	END CATCH;
 
 CREATE OR ALTER TRIGGER trigger_null_verifiying_plant_table
@@ -640,7 +676,7 @@ AS
 				BEGIN
 					IF ((SELECT TRY_CAST(@client AS INT)) IS NULL)
 						BEGIN
-							SET @id_client = ISNULL((SELECT id_client FROM report.client_table WHERE client_name = report.CORRECT_GRAMMAR_IN_NAMES(@client)), 0);
+							SET @id_client = ISNULL((SELECT id_client FROM report.client_table WHERE client_name = report.CORRECT_GRAMMAR(@client, 'name')), 0);
 						END;
 					ELSE IF((SELECT TRY_CAST(@client AS INT)) IS NOT NULL)
 						BEGIN
@@ -668,12 +704,12 @@ AS
 										BEGIN TRY
 											SET @value_engineer = TRIM(@value_engineer);
 											IF ((SELECT TRY_CAST(@value_engineer AS INT)) IS NULL)
-												IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE engineer_name = report.CORRECT_GRAMMAR_IN_NAMES(@value_engineer))
+												IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE engineer_name = report.CORRECT_GRAMMAR(@value_engineer, 'name'))
 													INSERT INTO report.report_preparation_table(id_report, id_engineer)
 													VALUES ((SELECT MAX(id_report) FROM report.report_table),
-															(SELECT id_engineer FROM report.engineer_table WHERE engineer_name = report.CORRECT_GRAMMAR_IN_NAMES(@value_engineer)));
+															(SELECT id_engineer FROM report.engineer_table WHERE engineer_name = report.CORRECT_GRAMMAR(@value_engineer, 'name')));
 												ELSE
-													PRINT CONCAT('Cannot find the engineer "', report.CORRECT_GRAMMAR_IN_NAMES(@value_engineer), '" in the engineer table');
+													PRINT CONCAT('Cannot find the engineer "', report.CORRECT_GRAMMAR(@value_engineer, 'name'), '" in the engineer table');
 											ELSE IF ((SELECT TRY_CAST(@value_engineer AS INT)) IS NOT NULL)
 												IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE id_engineer = @value_engineer)
 													INSERT INTO report.report_preparation_table(id_report, id_engineer)
@@ -694,12 +730,12 @@ AS
 								IF (@prepared_by NOT LIKE '%,%')
 									SET @prepared_by = TRIM(@prepared_by);  
 									IF ((SELECT TRY_CAST(@prepared_by AS INT)) IS NULL)
-										IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE engineer_name = report.CORRECT_GRAMMAR_IN_NAMES(@prepared_by))
+										IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE engineer_name = report.CORRECT_GRAMMAR(@prepared_by, 'name'))
 											INSERT INTO report.report_preparation_table(id_report, id_engineer)
 											VALUES ((SELECT MAX(id_report) FROM report.report_table),
-													(SELECT id_engineer FROM report.engineer_table WHERE engineer_name = report.CORRECT_GRAMMAR_IN_NAMES(@prepared_by)));
+													(SELECT id_engineer FROM report.engineer_table WHERE engineer_name = report.CORRECT_GRAMMAR(@prepared_by, 'name')));
 										ELSE
-											PRINT CONCAT('Cannot find the engineer "', report.CORRECT_GRAMMAR_IN_NAMES(@prepared_by), '" in the engineer table');
+											PRINT CONCAT('Cannot find the engineer "', report.CORRECT_GRAMMAR(@prepared_by, 'name'), '" in the engineer table');
 									ELSE IF ((SELECT TRY_CAST(@prepared_by AS INT)) IS NOT NULL)
 										IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE id_engineer = @prepared_by)
 											INSERT INTO report.report_preparation_table(id_report, id_engineer)
@@ -764,13 +800,13 @@ AS
 								SET @hydrant_protection = NULL;
 						IF ((SELECT TRY_CAST(@hydrant_protection AS INT)) IS NULL)
 							IF EXISTS(SELECT hydrant_protection_classification_name FROM report.hydrant_protection_classification_table
-																					WHERE hydrant_protection_classification_name = report.CORRECT_GRAMMAR_IN_NAMES(@hydrant_protection))
+																					WHERE hydrant_protection_classification_name = report.CORRECT_GRAMMAR(@hydrant_protection, 'name'))
 								SET @id_hydrant_protection_to_save = (SELECT id_hydrant_protection_classification FROM report.hydrant_protection_classification_table
-																					WHERE hydrant_protection_classification_name = report.CORRECT_GRAMMAR_IN_NAMES(@hydrant_protection))
+																					WHERE hydrant_protection_classification_name = report.CORRECT_GRAMMAR(@hydrant_protection, 'name'))
 							IF NOT EXISTS(SELECT hydrant_protection_classification_name FROM report.hydrant_protection_classification_table
-																					WHERE hydrant_protection_classification_name = report.CORRECT_GRAMMAR_IN_NAMES(@hydrant_protection))
+																					WHERE hydrant_protection_classification_name = report.CORRECT_GRAMMAR(@hydrant_protection, 'name'))
 								SET @id_hydrant_protection_to_save = NULL;
-								PRINT CONCAT('The protection name (', report.CORRECT_GRAMMAR_IN_NAMES(@hydrant_protection), ') was not found in the hydrant protection table.');
+								PRINT CONCAT('The protection name (', report.CORRECT_GRAMMAR(@hydrant_protection, 'name'), ') was not found in the hydrant protection table.');
 					IF (@hydrant_protection IS NULL OR @hydrant_protection = '')
 						SET @id_hydrant_protection_to_save = NULL;
 
@@ -790,13 +826,13 @@ AS
 								SET @hydrant_standpipe_type = NULL;
 						IF ((SELECT TRY_CAST(@hydrant_standpipe_type AS INT)) IS NULL)
 							IF EXISTS(SELECT id_hydrant_standpipe_system_type FROM report.hydrant_standpipe_system_type_table
-																				WHERE hydrant_standpipe_system_type_name = report.CORRECT_GRAMMAR_IN_NAMES(@hydrant_standpipe_type))
+																				WHERE hydrant_standpipe_system_type_name = report.CORRECT_GRAMMAR(@hydrant_standpipe_type, 'name'))
 								SET @id_hydrant_standpipe_type_to_save = (SELECT id_hydrant_standpipe_system_type FROM report.hydrant_standpipe_system_type_table
-																													WHERE hydrant_standpipe_system_type_name = report.CORRECT_GRAMMAR_IN_NAMES(@hydrant_standpipe_type))
+																													WHERE hydrant_standpipe_system_type_name = report.CORRECT_GRAMMAR(@hydrant_standpipe_type, 'name'))
 							IF NOT EXISTS(SELECT id_hydrant_standpipe_system_type FROM report.hydrant_standpipe_system_type_table
-																				WHERE hydrant_standpipe_system_type_name = report.CORRECT_GRAMMAR_IN_NAMES(@hydrant_standpipe_type))
+																				WHERE hydrant_standpipe_system_type_name = report.CORRECT_GRAMMAR(@hydrant_standpipe_type, 'name'))
 								SET @id_hydrant_standpipe_type_to_save = NULL;
-								PRINT CONCAT('The hydrant standpipe system type (', report.CORRECT_GRAMMAR_IN_NAMES(@hydrant_standpipe_type), ') was not found in the hydrant standpipe type table.');
+								PRINT CONCAT('The hydrant standpipe system type (', report.CORRECT_GRAMMAR(@hydrant_standpipe_type, 'name'), ') was not found in the hydrant standpipe type table.');
 					IF (@hydrant_standpipe_type IS NULL OR @hydrant_standpipe_type = '')
 						SET @id_hydrant_standpipe_type_to_save = NULL;
 
@@ -870,7 +906,7 @@ AS
 
 EXEC report.proc_insert_report '1/november/2019', '1000', '1029', '1000', '240000.00,units/Month', 12850.00, 'Light', 1, null, null, null, 0, 0, 0, 1, 0, 1, 1;
 
--- Perils and risk table date scripts
+-- Perils and risk table data scripts
 --
 CREATE OR ALTER FUNCTION report.DETERMINATE_RATE_OF_RISK(@rate AS VARCHAR(20))
 RETURNS FLOAT
@@ -932,18 +968,21 @@ AS
 					DECLARE @id_plant AS INT
 					BEGIN
 						IF ((SELECT TRY_CAST(@plant AS INT)) IS NULL)
-							SET @id_plant = ISNULL((SELECT id_plant FROM report.plant_table WHERE plant_name = report.CORRECT_GRAMMAR_IN_NAMES(@plant)), null);
+							SET @id_plant = ISNULL((SELECT id_plant FROM report.plant_table WHERE plant_name = report.CORRECT_GRAMMAR(@plant, 'name')), null);
 						IF ((SELECT TRY_CAST(@plant AS INT)) IS NOT NULL)
 							SET @id_plant = ISNULL((SELECT id_plant FROM report.plant_table WHERE id_plant = @plant), null);
 					END;
-						INSERT INTO report.perils_and_risk_table(id_report, id_plant, perils_and_risk_fire_explosion, perils_and_risk_landslide_subsidence, perils_and_risk_water_flooding, perils_and_risk_wind_storm, perils_and_risk_lighting,
-																perils_and_risk_earthquake, perils_and_risk_tsunami, perils_and_risk_collapse, perils_and_risk_aircraft, perils_and_risk_riot, perils_and_risk_design_failure, perils_and_risk_overall_rating)
-																VALUES (@id_report, @plant, report.DETERMINATE_RATE_OF_RISK(@fire_explosion), report.DETERMINATE_RATE_OF_RISK(@landslie_subsidence), report.DETERMINATE_RATE_OF_RISK(@water_flooding),
-																		report.DETERMINATE_RATE_OF_RISK(@wind_storm), report.DETERMINATE_RATE_OF_RISK(@lighting), report.DETERMINATE_RATE_OF_RISK(@earthquake), report.DETERMINATE_RATE_OF_RISK(@tsunami),
-																		report.DETERMINATE_RATE_OF_RISK(@collapse), report.DETERMINATE_RATE_OF_RISK(@aircraft), report.DETERMINATE_RATE_OF_RISK(@riot), report.DETERMINATE_RATE_OF_RISK(@design_failure),
-																		report.DETERMINATE_RATE_OF_RISK(@overall_rating));
-						PRINT CONCAT('Perils and risk for the ID report: (', @id_report,') and plant with the ID: (', @id_plant,') correctly saved');
-						COMMIT TRANSACTION @tran_insert_perils_and_risk;
+						IF (@id_plant IS NOT NULL)
+							BEGIN
+								INSERT INTO report.perils_and_risk_table(id_report, id_plant, perils_and_risk_fire_explosion, perils_and_risk_landslide_subsidence, perils_and_risk_water_flooding, perils_and_risk_wind_storm, perils_and_risk_lighting,
+																		perils_and_risk_earthquake, perils_and_risk_tsunami, perils_and_risk_collapse, perils_and_risk_aircraft, perils_and_risk_riot, perils_and_risk_design_failure, perils_and_risk_overall_rating)
+																		VALUES (@id_report, @plant, report.DETERMINATE_RATE_OF_RISK(@fire_explosion), report.DETERMINATE_RATE_OF_RISK(@landslie_subsidence), report.DETERMINATE_RATE_OF_RISK(@water_flooding),
+																				report.DETERMINATE_RATE_OF_RISK(@wind_storm), report.DETERMINATE_RATE_OF_RISK(@lighting), report.DETERMINATE_RATE_OF_RISK(@earthquake), report.DETERMINATE_RATE_OF_RISK(@tsunami),
+																				report.DETERMINATE_RATE_OF_RISK(@collapse), report.DETERMINATE_RATE_OF_RISK(@aircraft), report.DETERMINATE_RATE_OF_RISK(@riot), report.DETERMINATE_RATE_OF_RISK(@design_failure),
+																				report.DETERMINATE_RATE_OF_RISK(@overall_rating));
+								PRINT CONCAT('Perils and risk for the ID report: (', @id_report,') and plant with the ID: (', @id_plant,') correctly saved');
+								COMMIT TRANSACTION @tran_insert_perils_and_risk;
+							END;
 				END;
 			ELSE
 				PRINT ('Cannot insert in the perils and risk table because either the report or the plant cannot be found in the database');
@@ -956,3 +995,99 @@ AS
 -- Executable insertion perils and risk data
 
 EXEC report.proc_insert_perils_and_risk_table 1005, '1029', '2.5', 'light', 'light', '2', 'severe', null, 'none', '0', 'light', '1', 'LIGHT ', 'lIgHt';
+
+-- Loss scenario table data scripts
+--
+CREATE OR ALTER PROCEDURE report.proc_insert_loss_scenario_table
+	@id_report AS INT,
+	@client AS VARCHAR(100),
+	@plant AS VARCHAR(100),
+	@material_damage_amount AS DECIMAL(19, 4),
+	@material_damage_percentage AS DECIMAL(19, 4),
+	@business_interruption_amount AS DECIMAL(19, 4),
+	@business_interruption_percentage AS DECIMAL(19, 4),
+	@buildings_amount AS DECIMAL(19, 4),
+	@machinary_equipment AS DECIMAL(19, 4),
+	@electronic_equipment AS DECIMAL(19, 4),
+	@expansions_investment_works_amount AS DECIMAL(19, 4),
+	@stock_amount AS DECIMAL(19, 4),
+	@total_insured_values AS DECIMAL(19, 4),
+	@pml_percentage AS DECIMAL(19, 4),
+	@mfl AS DECIMAL(19, 4)
+AS
+	BEGIN TRY
+		DECLARE @tran_insert_loss_scenario AS VARCHAR(45) = 'insert_loss_scenario';
+		BEGIN TRANSACTION @tran_insert_loss_scenario
+		IF (@client IS NOT NULL AND @plant IS NOT NULL)
+			BEGIN
+				DECLARE 
+					@id_client AS INT,
+					@id_plant AS INT
+				
+				SET @plant = report.REMOVE_EXTRA_SPACES(@plant);
+				SET @client = report.REMOVE_EXTRA_SPACES(@client);
+
+				BEGIN
+					IF ((SELECT TRY_CAST(@client AS INT)) IS NOT NULL)
+						SET @id_client = ISNULL((SELECT id_client FROM report.client_table WHERE id_client = CAST(@client AS INT)), null);
+					ELSE IF ((SELECT TRY_CAST(@client AS INT)) IS NULL)
+						SET @id_client = ISNULL((SELECT id_client FROM report.client_table WHERE client_name = report.CORRECT_GRAMMAR(@client, 'name')), null);
+				END;
+				BEGIN
+					IF ((SELECT TRY_CAST(@plant AS INT)) IS NOT NULL)
+						SET @id_plant = ISNULL((SELECT id_plant FROM report.plant_table WHERE id_plant = CAST(@plant AS INT)), null);
+					ELSE IF ((SELECT TRY_CAST(@plant AS INT)) IS NULL)
+						SET @id_plant = ISNULL((SELECT id_plant FROM report.plant_table WHERE plant_name = report.CORRECT_GRAMMAR(@plant, 'name')), null);
+				END;
+
+				IF (@id_client IS NOT NULL AND @id_plant IS NOT NULL)
+					BEGIN
+						DECLARE
+							@material_damage_amount_to_save AS DECIMAL(19, 4),
+							@material_damage_percentage_to_save AS DECIMAL(19, 4),
+							@business_interruption_amount_to_save AS DECIMAL(19, 4),
+							@business_interruption_percentage_to_save AS DECIMAL(19, 4),
+							@buildings_amount_to_save AS DECIMAL(19, 4),
+							@machinary_equipment_to_save AS DECIMAL(19, 4),
+							@electronic_equipment_to_save AS DECIMAL(19, 4),
+							@expansions_investment_works_amount_to_save AS DECIMAL(19, 4),
+							@stock_amount_to_save AS DECIMAL(19, 4),
+							@total_insured_values_to_save AS DECIMAL(19, 4),
+							@pml_percentage_to_save AS DECIMAL(19, 4),
+							@mfl_to_save AS DECIMAL(19, 4);
+
+						SET @material_damage_amount_to_save = ISNULL(@material_damage_amount, 0);
+						SET @material_damage_percentage_to_save = ISNULL(@material_damage_percentage, 0);
+						SET @business_interruption_amount_to_save = ISNULL(@business_interruption_amount, 0);
+						SET @business_interruption_percentage_to_save = ISNULL(@business_interruption_percentage, 0);
+						SET @buildings_amount_to_save = ISNULL(@buildings_amount, 0);
+						SET @machinary_equipment_to_save  = ISNULL(@machinary_equipment, 0);
+						SET @electronic_equipment_to_save = ISNULL(@electronic_equipment, 0);
+						SET @expansions_investment_works_amount_to_save = ISNULL(@expansions_investment_works_amount, 0);
+						SET @stock_amount_to_save = ISNULL(@stock_amount, 0);
+						SET @total_insured_values_to_save = ISNULL(@total_insured_values, 0);
+						SET @pml_percentage_to_save = ISNULL(@pml_percentage, 0);
+						SET @mfl_to_save = ISNULL(@mfl, 0);
+
+						BEGIN
+							INSERT INTO report.loss_scenario_table(id_report, id_client, id_plant, loss_scenario_material_damage_amount, loss_scenario_material_damage_percentage, loss_scenario_business_interruption_amount,
+																	loss_scenario_business_interruption_percentage, loss_scenario_buildings_amount, loss_scenario_machinery_equipment_amount, loss_scenario_electronic_equipment_amount,
+																	loss_scenario_expansions_investment_works_amount, loss_scenario_stock_amount, loss_scenario_total_insured_values, loss_scenario_pml_percentage,
+																	loss_scenario_mfl)
+																	VALUES (@id_report, @id_client, @id_plant, @material_damage_amount_to_save, @material_damage_percentage_to_save, @business_interruption_amount_to_save, @business_interruption_percentage_to_save,
+																			@buildings_amount_to_save, @machinary_equipment_to_save, @electronic_equipment_to_save, @expansions_investment_works_amount_to_save, @stock_amount_to_save,
+																			@total_insured_values_to_save, @pml_percentage_to_save, @mfl_to_save);
+							PRINT CONCAT('The loss scenarios for the report with the ID: "', @id_report, '" was correctly saved in the database.');
+							COMMIT TRANSACTION @tran_insert_loss_scenario;
+						END;
+					END;
+			END;
+	END TRY
+	BEGIN CATCH
+		PRINT CONCAT('Cannot insert into the loss scenario table due to this error: ("', ERROR_MESSAGE(), '")');
+		ROLLBACK TRANSACTION @tran_insert_loss_scenario;
+	END CATCH;
+--
+-- Executable loss scenario data insertion
+
+EXEC report.proc_insert_loss_scenario_table 1005, 1000, 1029, 15963716.63, 85, 9129876, 75, 2343287.10, 3620429.53, null, null, 0, 25093592.63, 82, null;
