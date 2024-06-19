@@ -1,5 +1,7 @@
 USE gpi_consulting_services_reports_db;
 
+-- Useful function for data insertion
+
 CREATE OR ALTER FUNCTION report.REMOVE_EXTRA_SPACES(@input VARCHAR(150))
 RETURNS VARCHAR(150)
 AS
@@ -61,6 +63,78 @@ AS
 		RETURN @ToReturn;
 	END;
 
+CREATE OR ALTER FUNCTION report.CONSTRUCT_DATE(@date_to_parse VARCHAR(20))
+RETURNS DATETIME
+AS
+	BEGIN
+		DECLARE @to_return AS DATETIME;
+		SET @date_to_parse = report.REMOVE_EXTRA_SPACES(@date_to_parse);
+
+		IF (@date_to_parse IS NOT NULL)
+			IF (@date_to_parse LIKE '%/%' OR @date_to_parse LIKE '%-%')
+				BEGIN
+					DECLARE
+						@char_to_separate AS CHAR,
+						@day AS INT,
+						@month AS INT,
+						@year AS INT;
+
+					SET @char_to_separate = (SELECT CASE
+														WHEN @date_to_parse LIKE '%/%' THEN '/'
+														WHEN @date_to_parse LIKE '%-%' THEN '-'
+														ELSE '/'
+													END);
+
+					DECLARE @value AS VARCHAR(20);
+					DECLARE cur_date CURSOR DYNAMIC FORWARD_ONLY
+										FOR (SELECT * FROM STRING_SPLIT(@date_to_parse, @char_to_separate));
+					OPEN cur_date
+					FETCH NEXT FROM cur_date INTO @value
+					WHILE @@FETCH_STATUS = 0
+						BEGIN
+							IF (@value != '')
+								IF ((SELECT TRY_CAST(@value AS INT)) IS NOT NULL)
+									BEGIN
+										IF (CAST(@value AS INT) >= 1 AND CAST(@value AS INT) <= 31)
+											SET @day = @value;
+										ELSE
+											SET @day = 1;
+										IF (CAST(@value AS INT) >= 2010 AND CAST(@value AS INT) <= 2040)
+											SET @year = @value;
+										ELSE
+											SET @year = 2010
+									END;
+								ELSE IF ((SELECT TRY_CAST(@value AS INT)) IS NULL)
+									BEGIN
+										SET @month = (SELECT CASE
+																WHEN LOWER(@month) = 'january' OR LOWER(@month) = 'enero' THEN 1
+																WHEN LOWER(@month) = 'february' OR LOWER(@month) = 'febrero' THEN 2
+																WHEN LOWER(@month) = 'march' OR LOWER(@month) = 'marzo' THEN 3
+																WHEN LOWER(@month) = 'april' OR LOWER(@month) = 'abril' THEN 4
+																WHEN LOWER(@month) = 'may' OR LOWER(@month) = 'mayo' THEN 5
+																WHEN LOWER(@month) = 'june' OR LOWER(@month) = 'junio' THEN 6
+																WHEN LOWER(@month) = 'july' OR LOWER(@month) = 'julio' THEN 7
+																WHEN LOWER(@month) = 'agost' OR LOWER(@month) = 'agosto' THEN 8
+																WHEN LOWER(@month) = 'september' OR LOWER(@month) = 'septiembre' THEN 9
+																WHEN LOWER(@month) = 'october' OR LOWER(@month) = 'octubre' THEN 10
+																WHEN LOWER(@month) = 'november' OR LOWER(@month) = 'noviembre' THEN 11
+																WHEN LOWER(@month) = 'december' OR LOWER(@month) = 'diciembre' THEN 12
+																ELSE 1
+															END);
+									END;
+						END;
+						FETCH NEXT FROM cur_date INTO @value
+					CLOSE cur_date;
+					DEALLOCATE cur_date;
+					SET @to_return = DATEFROMPARTS(@year, @day, @month);
+				END;
+			ELSE
+				SET @to_return = GETDATE();
+		ELSE
+			SET @to_return = GETDATE();
+		RETURN @to_return;
+	END;
+-- ------------------------------------
 
 -- Engineer insertion data scripts.
 --
@@ -579,113 +653,64 @@ AS
 		IF (@id_client != 0)
 			IF (@id_plant != 0)
 				IF (@prepared_by IS NOT NULL)
-						IF (@date LIKE '%/%')
-							DECLARE 
-								@day AS INT,
-								@month AS INT,
-								@year AS INT
-							BEGIN
-								DECLARE @date_to_save AS DATETIME;
-
-								DECLARE @value_date AS VARCHAR(20);
-								DECLARE cur_date CURSOR DYNAMIC FORWARD_ONLY
-													FOR SELECT * FROM STRING_SPLIT(@date, '/');
-								OPEN cur_date;
-								FETCH NEXT FROM cur_date INTO @value_date;
-								WHILE @@FETCH_STATUS = 0
-									BEGIN TRY
-										IF ((SELECT TRY_CAST(@value_date AS INT)) IS NOT NULL)
-											IF (@value_date > 2000 AND @value_date < 2100)
-												SET @year = @value_date;
-											ELSE
-												IF (@value_date >= 1 AND @value_date <= 31)
-													SET @day = @value_date
-										IF ((SELECT TRY_CAST(@value_date AS INT)) IS NULL)
-											SET @month = (SELECT CASE 
-																	WHEN LOWER(@value_date) = 'january' THEN 1
-																	WHEN LOWER(@value_date) = 'february' THEN 2
-																	WHEN LOWER(@value_date) = 'march' THEN 3
-																	WHEN LOWER(@value_date) = 'april' THEN 4
-																	WHEN LOWER(@value_date) = 'may' THEN 5
-																	WHEN LOWER(@value_date) = 'june' THEN 6
-																	WHEN LOWER(@value_date) = 'july' THEN 7
-																	WHEN LOWER(@value_date) = 'agost' THEN 8
-																	WHEN LOWER(@value_date) = 'september' THEN 9
-																	WHEN LOWER(@value_date) = 'october' THEN 10
-																	WHEN LOWER(@value_date) = 'november' THEN 11
-																	WHEN LOWER(@value_date) = 'december' THEN 12
-																	ELSE 1
-																 END);
-										FETCH NEXT FROM cur_date INTO @value_date;
-									END TRY
-									BEGIN CATCH
-										PRINT CONCAT('An error ocurred while attempting to save the report date (', ERROR_MESSAGE(), ')');
-										CLOSE cur_date;
-										DEALLOCATE cur_date;
-									END CATCH;
-								CLOSE cur_date;
-								DEALLOCATE cur_date;
-
-								SET @date_to_save = DATEFROMPARTS(@year, @month, @day);
+					BEGIN
+						INSERT INTO report.report_table (report_date, id_client, id_plant)
+						VALUES (report.CONSTRUCT_DATE(@date), @id_client, @id_plant);
+						BEGIN
+							IF (@prepared_by LIKE '%,%')
 								BEGIN
-									INSERT INTO report.report_table (report_date, id_client, id_plant)
-									VALUES (@date_to_save, @id_client, @id_plant);
-									BEGIN
-										IF (@prepared_by LIKE '%,%')
-											BEGIN
-												DECLARE @value_engineer AS VARCHAR(60)
-												DECLARE cur_engineer CURSOR DYNAMIC FORWARD_ONLY
-																	FOR SELECT * FROM STRING_SPLIT(@prepared_by, ',');
-												OPEN cur_engineer;
-												FETCH NEXT FROM cur_engineer INTO @value_engineer;
-												WHILE @@FETCH_STATUS = 0
-													BEGIN TRY
-														SET @value_engineer = TRIM(@value_engineer);
-														IF ((SELECT TRY_CAST(@value_engineer AS INT)) IS NULL)
-															IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE engineer_name = report.CORRECT_GRAMMAR_IN_NAMES(@value_engineer))
-																INSERT INTO report.report_preparation_table(id_report, id_engineer)
-																VALUES ((SELECT MAX(id_report) FROM report.report_table),
-																		(SELECT id_engineer FROM report.engineer_table WHERE engineer_name = report.CORRECT_GRAMMAR_IN_NAMES(@value_engineer)));
-															ELSE
-																PRINT CONCAT('Cannot find the engineer "', report.CORRECT_GRAMMAR_IN_NAMES(@value_engineer), '" in the engineer table');
-														ELSE IF ((SELECT TRY_CAST(@value_engineer AS INT)) IS NOT NULL)
-															IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE id_engineer = @value_engineer)
-																INSERT INTO report.report_preparation_table(id_report, id_engineer)
-																VALUES ((SELECT MAX(id_report) FROM report.report_table),
-																		(SELECT id_engineer FROM report.engineer_table WHERE id_engineer = @value_engineer));
-															ELSE
-																PRINT CONCAT('Cannot find the engineer with the ID "', @value_engineer, '" in the engineer table');
-														FETCH NEXT FROM cur_engineer INTO @value_engineer;
-													END TRY
-													BEGIN CATCH
-														PRINT CONCAT('Cannot insert the engineer in the report preparation table due to this error (', ERROR_MESSAGE(), ')')
-														CLOSE cur_engineer;
-														DEALLOCATE cur_engineer;
-													END CATCH;
-												CLOSE cur_engineer;
-												DEALLOCATE cur_engineer;
-											END;
-										IF (@prepared_by NOT LIKE '%,%')
-											SET @prepared_by = TRIM(@prepared_by);  
-											IF ((SELECT TRY_CAST(@prepared_by AS INT)) IS NULL)
-												IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE engineer_name = report.CORRECT_GRAMMAR_IN_NAMES(@prepared_by))
+									DECLARE @value_engineer AS VARCHAR(60)
+									DECLARE cur_engineer CURSOR DYNAMIC FORWARD_ONLY
+															FOR SELECT * FROM STRING_SPLIT(@prepared_by, ',');
+									OPEN cur_engineer;
+									FETCH NEXT FROM cur_engineer INTO @value_engineer;
+									WHILE @@FETCH_STATUS = 0
+										BEGIN TRY
+											SET @value_engineer = TRIM(@value_engineer);
+											IF ((SELECT TRY_CAST(@value_engineer AS INT)) IS NULL)
+												IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE engineer_name = report.CORRECT_GRAMMAR_IN_NAMES(@value_engineer))
 													INSERT INTO report.report_preparation_table(id_report, id_engineer)
 													VALUES ((SELECT MAX(id_report) FROM report.report_table),
-															(SELECT id_engineer FROM report.engineer_table WHERE engineer_name = report.CORRECT_GRAMMAR_IN_NAMES(@prepared_by)));
+															(SELECT id_engineer FROM report.engineer_table WHERE engineer_name = report.CORRECT_GRAMMAR_IN_NAMES(@value_engineer)));
 												ELSE
-													PRINT CONCAT('Cannot find the engineer "', report.CORRECT_GRAMMAR_IN_NAMES(@prepared_by), '" in the engineer table');
-											ELSE IF ((SELECT TRY_CAST(@prepared_by AS INT)) IS NOT NULL)
-												IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE id_engineer = @prepared_by)
+													PRINT CONCAT('Cannot find the engineer "', report.CORRECT_GRAMMAR_IN_NAMES(@value_engineer), '" in the engineer table');
+											ELSE IF ((SELECT TRY_CAST(@value_engineer AS INT)) IS NOT NULL)
+												IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE id_engineer = @value_engineer)
 													INSERT INTO report.report_preparation_table(id_report, id_engineer)
 													VALUES ((SELECT MAX(id_report) FROM report.report_table),
-															(SELECT id_engineer FROM report.engineer_table WHERE id_engineer = @prepared_by));
+															(SELECT id_engineer FROM report.engineer_table WHERE id_engineer = @value_engineer));
 												ELSE
-													PRINT CONCAT('Cannot find the engineer with the ID "', @prepared_by, '" in the engineer table');
-									END;
-								DECLARE @report_id AS INT = (SELECT MAX(id_report) FROM report.report_table);
-								PRINT CONCAT('The report with the ID ("', @report_id, '") was correctly saved in the database.');
+													PRINT CONCAT('Cannot find the engineer with the ID "', @value_engineer, '" in the engineer table');
+													FETCH NEXT FROM cur_engineer INTO @value_engineer;
+										END TRY
+										BEGIN CATCH
+											PRINT CONCAT('Cannot insert the engineer in the report preparation table due to this error (', ERROR_MESSAGE(), ')')
+											CLOSE cur_engineer;
+											DEALLOCATE cur_engineer;
+										END CATCH;
+									CLOSE cur_engineer;
+									DEALLOCATE cur_engineer;
 								END;
-							END;
+								IF (@prepared_by NOT LIKE '%,%')
+									SET @prepared_by = TRIM(@prepared_by);  
+									IF ((SELECT TRY_CAST(@prepared_by AS INT)) IS NULL)
+										IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE engineer_name = report.CORRECT_GRAMMAR_IN_NAMES(@prepared_by))
+											INSERT INTO report.report_preparation_table(id_report, id_engineer)
+											VALUES ((SELECT MAX(id_report) FROM report.report_table),
+													(SELECT id_engineer FROM report.engineer_table WHERE engineer_name = report.CORRECT_GRAMMAR_IN_NAMES(@prepared_by)));
+										ELSE
+											PRINT CONCAT('Cannot find the engineer "', report.CORRECT_GRAMMAR_IN_NAMES(@prepared_by), '" in the engineer table');
+									ELSE IF ((SELECT TRY_CAST(@prepared_by AS INT)) IS NOT NULL)
+										IF EXISTS(SELECT engineer_name FROM report.engineer_table WHERE id_engineer = @prepared_by)
+											INSERT INTO report.report_preparation_table(id_report, id_engineer)
+											VALUES ((SELECT MAX(id_report) FROM report.report_table),
+													(SELECT id_engineer FROM report.engineer_table WHERE id_engineer = @prepared_by));
+										ELSE
+											PRINT CONCAT('Cannot find the engineer with the ID "', @prepared_by, '" in the engineer table');
+						END;
+						DECLARE @report_id AS INT = (SELECT MAX(id_report) FROM report.report_table);
+						PRINT CONCAT('The report with the ID ("', @report_id, '") was correctly saved in the database.');
+					END;
 					DECLARE @installed_capacity_value AS FLOAT;
 					DECLARE @installed_capacity_id AS INT;
 
@@ -719,26 +744,7 @@ AS
 					
 					DECLARE @built_up_save AS FLOAT = ISNULL(@built_up, 0);
 
-					DECLARE @exposures_save AS FLOAT;
-					IF (@exposures IS NOT NULL)
-						IF ((SELECT TRY_CAST(@exposures AS FLOAT)) IS NOT NULL)
-							DECLARE @exposures_to_evaluate AS FLOAT = CAST(@exposures AS FLOAT);
-							IF (@exposures_to_evaluate >= 0.0 AND @exposures_to_evaluate <= 3.0)
-								SET @exposures_save = @exposures_to_evaluate;
-							ELSE
-								SET @exposures_save = 0.0
-						IF ((SELECT TRY_CAST(@exposures AS FLOAT)) IS NULL)
-							SET @exposures_save = (SELECT CASE
-															WHEN LOWER(@exposures) = 'none' THEN 0.0
-															WHEN LOWER(@exposures) = 'light' THEN 1.0
-															WHEN LOWER(@exposures) = 'light/moderate' THEN 1.5
-															WHEN LOWER(@exposures) = 'moderate' THEN 2.0
-															WHEN LOWER(@exposures) = 'moderate/severe' THEN 2.5
-															WHEN LOWER(@exposures) = 'severe' THEN 3.0
-															ELSE 0.0
-														END);
-					ELSE
-						SET @exposures_save = 0.0;
+					DECLARE @exposures_save AS FLOAT = report.DETERMINATE_RATE_OF_RISK(@exposures);;
 
 					DECLARE @has_hydrants_to_save AS BIT = IIF(@has_hydrants IS NULL, 0, @has_hydrants);
 
