@@ -180,7 +180,13 @@ AS
 --
 -- Executable insertion engineer data.
 
+EXEC report.proc_insert_engineer 'Marlon Lira', 'mlira@gpiconsultingservices.com';
 EXEC report.proc_insert_engineer 'Jorge Cifuentes Garcia', 'jcifuentes@gpiconsultingservices.com';
+EXEC report.proc_insert_engineer 'Carlos Grajeda', null;
+EXEC report.proc_insert_engineer 'Rafael Grajeda', null;
+EXEC report.proc_insert_engineer 'Juan Jose Lira', null;
+EXEC report.proc_insert_engineer 'Juan Diego Lacayo', 'jdlacayo@gpiconsultingservices.com';
+EXEC report.proc_insert_engineer 'Eduardo Bracamonte', null;
 
 -- Client insertion data scripts.
 --
