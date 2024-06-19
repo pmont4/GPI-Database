@@ -214,15 +214,6 @@ AS
 		ROLLBACK TRANSACTION @tran_insert_engineer;
 	END CATCH;
 --
--- Executable insertion engineer data.
-
-EXEC report.proc_insert_engineer 'Marlon Lira', 'mlira@gpiconsultingservices.com';
-EXEC report.proc_insert_engineer 'Jorge Cifuentes Garcia', 'jcifuentes@gpiconsultingservices.com';
-EXEC report.proc_insert_engineer 'Carlos Grajeda', null;
-EXEC report.proc_insert_engineer 'Rafael Grajeda', null;
-EXEC report.proc_insert_engineer 'Juan Jose Lira', null;
-EXEC report.proc_insert_engineer 'Juan Diego Lacayo', 'jdlacayo@gpiconsultingservices.com';
-EXEC report.proc_insert_engineer 'Eduardo Bracamonte', null;
 
 -- Client insertion data scripts.
 --
@@ -250,9 +241,6 @@ AS
 		ROLLBACK TRANSACTION @tran_insert_client;
 	END CATCH;
 --
--- Executable insertion client data.
-
-EXEC report.proc_insert_client 'Seguros Universales S.A.';
 
 -- Capacity type insertion data scripts.
 --
@@ -280,9 +268,6 @@ AS
 		ROLLBACK TRANSACTION @tran_insert_capacity_type;
 	END CATCH;
 --
--- Executable insertion capacity type data
-
-EXEC report.proc_insert_capacity_type 'Tons / year';
 
 -- Merchandise class insertion data scripts.
 --
@@ -310,12 +295,6 @@ AS
 		ROLLBACK TRANSACTION @tran_insert_merchandise_class;
 	END CATCH;
 --
--- Executable insertion merchandise class data
-
-EXEC report.proc_insert_merchandise_class 'I';
-EXEC report.proc_insert_merchandise_class 'II';
-EXEC report.proc_insert_merchandise_class 'III';
-EXEC report.proc_insert_merchandise_class 'IV';
 
 -- Hydrant protection class data scripts
 --
@@ -343,11 +322,6 @@ AS
 		ROLLBACK TRANSACTION @tran_insert_hydrant_protection_class;
 	END CATCH;
 --
--- Executable insertion hydrant protection class data
-
-EXEC report.proc_insert_hydrant_protection_class 'Major fires';
-EXEC report.proc_insert_hydrant_protection_class 'Minor fires';
-EXEC report.proc_insert_hydrant_protection_class 'Major & Minor fires';
 
 -- Hydrant standpipe type data scripts
 --
@@ -375,13 +349,6 @@ AS
 		ROLLBACK TRANSACTION @tran_insert_hydrant_standpipe_type;
 	END CATCH;
 --
--- Executable insertion hydrant standpipe type data
-
-EXEC report.proc_insert_hydrant_standpipe_type 'Automatic Dry';
-EXEC report.proc_insert_hydrant_standpipe_type 'Automatic Wet';
-EXEC report.proc_insert_hydrant_standpipe_type 'Manual Dry';
-EXEC report.proc_insert_hydrant_standpipe_type 'Manual Wet';
-EXEC report.proc_insert_hydrant_standpipe_type 'Semiautomatic Dry';
 
 -- Hydrant standpipe class data scripts
 --
@@ -409,11 +376,6 @@ AS
 		ROLLBACK TRANSACTION @tran_insert_hydrant_standpipe_class; 
 	END CATCH;
 --
--- Executable insertion hydrant standpipe class data
-
-EXEC report.proc_insert_hydrant_standpipe_class 'I';
-EXEC report.proc_insert_hydrant_standpipe_class 'II';
-EXEC report.proc_insert_hydrant_standpipe_class 'III';
 
 -- Type location classification data
 --
@@ -441,12 +403,6 @@ AS
 		ROLLBACK TRANSACTION @tran_insert_type_location_class;
 	END CATCH;
 --
--- Executable insertion type location class data
-
-EXEC report.proc_insert_type_location_class 'Industrial';
-EXEC report.proc_insert_type_location_class 'Comercial';
-EXEC report.proc_insert_type_location_class 'Residential';
-EXEC report.proc_insert_type_location_class 'Rural';
 
 -- Business turnover classification data
 --

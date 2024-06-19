@@ -1,5 +1,95 @@
 USE gpi_consulting_services_reports_db;
 
+-- Engineer table executables for data insertion
+-- Data is being inserted in the following order
+--
+-- Name of the engineer and the contact of the engineer (could be email or phone number)
+
+EXEC report.proc_insert_engineer 'Marlon Lira', 'mlira@gpiconsultingservices.com';
+EXEC report.proc_insert_engineer 'Jorge Cifuentes Garcia', 'jcifuentes@gpiconsultingservices.com';
+EXEC report.proc_insert_engineer 'Carlos Grajeda', null;
+EXEC report.proc_insert_engineer 'Rafael Grajeda', null;
+EXEC report.proc_insert_engineer 'Juan Jose Lira', null;
+EXEC report.proc_insert_engineer 'Juan Diego Lacayo', 'jdlacayo@gpiconsultingservices.com';
+EXEC report.proc_insert_engineer 'Eduardo Bracamonte', null;
+
+-- Client table executables for data insertion
+-- Data is being inserted in the following order
+--
+-- Name of the company
+
+EXEC report.proc_insert_client 'Seguros Universales S.A.';
+
+-- Capacity type table executables for data insertion
+-- Data is being inserted in the following order
+-- 
+-- Name of the type
+
+EXEC report.proc_insert_capacity_type 'Tons / year';
+
+-- Merchandise classification table executables for data insertion
+-- Data is being inserted in the following order
+--
+-- Name of the merchandise classification
+
+EXEC report.proc_insert_merchandise_class 'I';
+EXEC report.proc_insert_merchandise_class 'II';
+EXEC report.proc_insert_merchandise_class 'III';
+EXEC report.proc_insert_merchandise_class 'IV';
+
+-- Hydrant protection classification table executables for data insertion
+-- Data is being inserted in the following order
+--
+-- Name of the classification
+
+EXEC report.proc_insert_hydrant_protection_class 'Major fires';
+EXEC report.proc_insert_hydrant_protection_class 'Minor fires';
+EXEC report.proc_insert_hydrant_protection_class 'Major & Minor fires';
+
+-- Hydrant standpipe system type table executables for data insertion
+-- Data is being inserted in the following order
+--
+-- Name of the type
+
+EXEC report.proc_insert_hydrant_standpipe_type 'Automatic Dry';
+EXEC report.proc_insert_hydrant_standpipe_type 'Automatic Wet';
+EXEC report.proc_insert_hydrant_standpipe_type 'Manual Dry';
+EXEC report.proc_insert_hydrant_standpipe_type 'Manual Wet';
+EXEC report.proc_insert_hydrant_standpipe_type 'Semiautomatic Dry';
+
+-- Hydrant standpipe system classificatioon table executables for data insertion
+-- Data is being inserted in the following order
+--
+-- Name of the classification
+
+EXEC report.proc_insert_hydrant_standpipe_class 'I';
+EXEC report.proc_insert_hydrant_standpipe_class 'II';
+EXEC report.proc_insert_hydrant_standpipe_class 'III';
+
+-- Type of location table executables for data insertion
+-- Data is being inserted in the following order
+--
+-- Name of the type location
+
+EXEC report.proc_insert_type_location_class 'Industrial';
+EXEC report.proc_insert_type_location_class 'Comercial';
+EXEC report.proc_insert_type_location_class 'Residential';
+EXEC report.proc_insert_type_location_class 'Rural';
+
+-- Business turnover classification table executables for data insertion
+-- Data is being inserted in the following order
+--
+-- Name of the business turnover classification
+
+EXEC report.proc_insert_business_turnover_class 'Production';
+EXEC report.proc_insert_business_turnover_class 'Electricity generation';
+EXEC report.proc_insert_business_turnover_class 'Storage';
+EXEC report.proc_insert_business_turnover_class 'Distribution';
+EXEC report.proc_insert_business_turnover_class 'Real state';
+EXEC report.proc_insert_business_turnover_class 'Retail';
+EXEC report.proc_insert_business_turnover_class 'Aeronautical revenue';
+EXEC report.proc_insert_business_turnover_class 'Production and electricity generation';
+
 -- Plant table executables for data insertion
 -- Data is being inserted in the following order:
 --
