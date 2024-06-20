@@ -77,8 +77,6 @@ EXEC view_table 'pr';
 -- Loss scenario executable
 EXEC view_table 'ls';
 
-DELETE FROM report.perils_and_risk_table WHERE id_perils_and_risk = 1009;
-
 -- Columns
 SELECT C.COLUMN_NAME AS 'Nombre de la columna', C.DATA_TYPE AS 'Tipo de la columna' FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'plant_table';
 SELECT C.COLUMN_NAME AS 'Nombre de la columna', C.DATA_TYPE AS 'Tipo de la columna' FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'report_table';
