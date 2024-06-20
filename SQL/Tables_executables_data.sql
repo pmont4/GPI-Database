@@ -148,9 +148,9 @@ EXEC report.proc_insert_report '1/november/2019', '1000', '1029', '1000', '24000
 -- Or you could write the classification without numbers: light, light/moderate, moderate, moderate/severe, severe
 --
 -- The id of the report, the id or name of the plant, fire/explosion risk rate, landslide/subsidence risk rate, water flooding risk rate, wind/storm risk rate, lighting risk rate, earthquake risk rate, tsunami risk rate,
--- collapse risk rate, aircraft risk rate, riot risk rate, design failure risk rate and a overall risk rate
+-- collapse risk rate, aircraft risk rate, riot risk rate, design failure risk rate and a overall risk rate, if you leave the overall risk field empty, the database will automatically calculate the overall risk.
 
-EXEC report.proc_insert_perils_and_risk_table 1005, '1029', '2.5', 'light', 'light', '2', 'severe', null, 'none', '0', 'light', '1', 'LIGHT ', 'lIgHt';
+EXEC report.proc_insert_perils_and_risk_table 1005, '1029', '2.5', 'light', 'light', '2', 'severe', null, 'none', '0', 'light', '1', 'LIGHT ', null;
 
 -- Loss scenario executables for data insertion
 -- Data is being inserted in the following order:
