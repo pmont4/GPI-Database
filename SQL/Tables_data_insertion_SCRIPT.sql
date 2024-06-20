@@ -185,6 +185,32 @@ AS
 			END;
 		RETURN @to_return;
 	END;
+
+CREATE OR ALTER FUNCTION report.CALCULATE_BIT_TO_SAVE(@value VARCHAR(8))
+RETURNS BIT
+AS
+	BEGIN
+		DECLARE @to_return AS BIT;
+		IF (@value IS NOT NULL)
+			BEGIN
+				IF ((SELECT TRY_CAST(@value AS INT)) IS NULL)
+					BEGIN
+						SET @to_return = (SELECT CASE
+													WHEN LOWER(@value) = 'yes' OR LOWER(@value) = 'si' OR LOWER(@value) = 'true' OR LOWER(@value) = 'verdadero' THEN 1
+													WHEN LOWER(@value) = 'no' OR LOWER(@value) = 'false' OR LOWER(@value) = 'falso' THEN 0
+													ELSE 0
+												END);
+					END;
+				ELSE IF ((SELECT TRY_CAST(@value AS INT)) IS NOT NULL)
+					IF (CAST(@value AS INT) >= 0 AND CAST(@value AS INT) <= 1)
+						BEGIN
+							SET @to_return = CAST(@value AS BIT);
+						END;
+					ELSE
+						SET @to_return = 0;
+			END;
+		RETURN @to_return;
+	END;
 -- ------------------------------------
 
 -- Engineer insertion data scripts.
@@ -638,17 +664,17 @@ CREATE OR ALTER PROCEDURE report.proc_insert_report
 	@installed_capacity AS VARCHAR(70),
 	@built_up AS FLOAT,
 	@exposures AS VARCHAR(20),
-	@has_hydrants AS BIT,
+	@has_hydrants AS VARCHAR(2),
 	@hydrant_protection AS VARCHAR(20),
 	@hydrant_standpipe_type AS VARCHAR(20),
 	@hydrant_standpipe_class AS VARCHAR(20),
-	@has_foam_suppression AS BIT,
-	@has_suppression AS BIT,
-	@has_sprinklers AS BIT,
-	@has_afds AS BIT,
-	@has_fire_detection_batteries AS BIT,
-	@has_private_brigade AS BIT,
-	@has_lighting_protection AS BIT
+	@has_foam_suppression AS VARCHAR(8),
+	@has_suppression AS VARCHAR(8),
+	@has_sprinklers AS VARCHAR(8),
+	@has_afds AS VARCHAR(8),
+	@has_fire_detection_batteries AS VARCHAR(8),
+	@has_private_brigade AS VARCHAR(8),
+	@has_lighting_protection AS VARCHAR(8)
 AS
 	BEGIN TRY
 		DECLARE
@@ -763,9 +789,9 @@ AS
 					
 					DECLARE @built_up_save AS FLOAT = ISNULL(@built_up, 0);
 
-					DECLARE @exposures_save AS FLOAT = report.DETERMINATE_RATE_OF_RISK(@exposures);;
+					DECLARE @exposures_save AS FLOAT = report.DETERMINATE_RATE_OF_RISK(@exposures);
 
-					DECLARE @has_hydrants_to_save AS BIT = IIF(@has_hydrants IS NULL, 0, @has_hydrants);
+					DECLARE @has_hydrants_to_save AS BIT = report.CALCULATE_BIT_TO_SAVE(@has_hydrants);
 
 					DECLARE @id_hydrant_protection_to_save AS INT;
 					IF (@hydrant_protection IS NOT NULL)
@@ -845,19 +871,19 @@ AS
 					IF (@hydrant_standpipe_class IS NULL OR @hydrant_standpipe_class = '')
 						SET @id_hydrant_standpipe_class_to_save = NULL
 
-					DECLARE @has_foam_suppression_sys_to_save AS BIT = ISNULL(@has_foam_suppression, 0);
+					DECLARE @has_foam_suppression_sys_to_save AS BIT = report.CALCULATE_BIT_TO_SAVE(@has_foam_suppression);
 
-					DECLARE @has_suppression_to_save AS BIT = ISNULL(@has_suppression, 0);
+					DECLARE @has_suppression_to_save AS BIT = report.CALCULATE_BIT_TO_SAVE(@has_suppression);
 
-					DECLARE @has_sprinklers_to_save AS BIT = ISNULL(@has_sprinklers, 0);
+					DECLARE @has_sprinklers_to_save AS BIT = report.CALCULATE_BIT_TO_SAVE(@has_sprinklers);
 
-					DECLARE @has_afds_to_save AS BIT = ISNULL(@has_afds, 0);
+					DECLARE @has_afds_to_save AS BIT = report.CALCULATE_BIT_TO_SAVE(@has_afds);
 
-					DECLARE @has_fire_detetion_batteries_to_save AS BIT = ISNULL(@has_fire_detection_batteries, 0);
+					DECLARE @has_fire_detetion_batteries_to_save AS BIT = report.CALCULATE_BIT_TO_SAVE(@has_fire_detection_batteries);
 
-					DECLARE @has_private_brigade_to_save AS BIT = ISNULL(@has_private_brigade, 0);
+					DECLARE @has_private_brigade_to_save AS BIT = report.CALCULATE_BIT_TO_SAVE(@has_private_brigade);
 
-					DECLARE @has_lighting_protection_to_save AS BIT = ISNULL(@has_lighting_protection, 0);
+					DECLARE @has_lighting_protection_to_save AS BIT = report.CALCULATE_BIT_TO_SAVE(@has_lighting_protection);
 
 					BEGIN TRY
 							INSERT INTO report.plant_parameters(id_report, id_plant, plant_parameters_installed_capacity, id_capacity_type, plant_parameters_built_up, plant_parameters_exposures,

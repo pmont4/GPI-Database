@@ -133,11 +133,11 @@ EXEC report.proc_insert_plant 'Industria de Tubos y Perfiles, S.A. - INTUPERSA',
 --
 -- Date of the report, id or name of the client who requested the report, id or name of the plant, id or name of the engineer who prepared the report (in case there are more than one engineer, add the name or the id followed by a ,)
 -- the installed capacity (first write the amount, then the classification followeb by a /, classification can be write by id or name), the plant built-up area, the rate of risk that the plant is expose to by it's location,
--- (Here we add 0 or 1, 1 is yes and 0 is no, or you could write yes or no) Plant has hydrants?, id or name of the hydrant protection classification, id or name of the hydrant standpipe system type, id or name of the hydrant standpipe system classification,
--- (Here we add 0 or 1, 1 is yes and 0 is no, or you could write yes or no) Does the plant has a foam suppresion system? (Here we add 0 or 1, 1 is yes and 0 is no, or you could write yes or no) does the plant has a suppression system?,
--- (Here we add 0 or 1, 1 is yes and 0 is no, or you could write yes or no) Does the plant has sprinklers? (Here we add 0 or 1, 1 is yes and 0 is no, or you could write yes or no) does the plant has a automatic fire detection system (afds)?,
--- (Here we add 0 or 1, 1 is yes and 0 is no, or you could write yes or no) Does the plant has fire detector that work with batteries? (Here we add 0 or 1, 1 is yes and 0 is no, or you could write yes or no) Does the plant has a private brigade?
--- (Here we add 0 or 1, 1 is yes and 0 is no, or you could write yes or no) Does the plant has lighting protection?
+-- (Here we add 0 or 1, 1 is yes and 0 is no, or you could write yes or no, true or false) Plant has hydrants?, id or name of the hydrant protection classification, id or name of the hydrant standpipe system type, id or name of the hydrant standpipe system classification,
+-- (Here we add 0 or 1, 1 is yes and 0 is no, or you could write yes or no, true or false) Does the plant has a foam suppresion system? (Here we add 0 or 1, 1 is yes and 0 is no, or you could write yes or no, true or false) does the plant has a suppression system?,
+-- (Here we add 0 or 1, 1 is yes and 0 is no, or you could write yes or no, true or false) Does the plant has sprinklers? (Here we add 0 or 1, 1 is yes and 0 is no, or you could write yes or no, true or false) does the plant has a automatic fire detection system (afds)?,
+-- (Here we add 0 or 1, 1 is yes and 0 is no, or you could write yes or no, true or false) Does the plant has fire detector that work with batteries? (Here we add 0 or 1, 1 is yes and 0 is no, or you could write yes or no, true or false) Does the plant has a private brigade?
+-- (Here we add 0 or 1, 1 is yes and 0 is no, or you could write yes or no, true or false) Does the plant has lighting protection?
 
 EXEC report.proc_insert_report '1/november/2019', '1000', '1029', '1000', '240000.00,units/Month', 12850.00, 'Light', 1, null, null, null, 0, 0, 0, 1, 0, 1, 1;
 
