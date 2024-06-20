@@ -974,18 +974,18 @@ CREATE OR ALTER PROCEDURE report.proc_insert_loss_scenario_table
 	@id_report AS INT,
 	@client AS VARCHAR(100),
 	@plant AS VARCHAR(100),
-	@material_damage_amount AS DECIMAL(19, 4),
-	@material_damage_percentage AS DECIMAL(19, 4),
-	@business_interruption_amount AS DECIMAL(19, 4),
-	@business_interruption_percentage AS DECIMAL(19, 4),
-	@buildings_amount AS DECIMAL(19, 4),
-	@machinary_equipment AS DECIMAL(19, 4),
-	@electronic_equipment AS DECIMAL(19, 4),
-	@expansions_investment_works_amount AS DECIMAL(19, 4),
-	@stock_amount AS DECIMAL(19, 4),
-	@total_insured_values AS DECIMAL(19, 4),
-	@pml_percentage AS DECIMAL(19, 4),
-	@mfl AS DECIMAL(19, 4)
+	@material_damage_amount AS DECIMAL(19, 2),
+	@material_damage_percentage AS FLOAT(2),
+	@business_interruption_amount AS DECIMAL(19, 2),
+	@business_interruption_percentage AS FLOAT(2),
+	@buildings_amount AS DECIMAL(19, 2),
+	@machinary_equipment AS DECIMAL(19, 2),
+	@electronic_equipment AS DECIMAL(19, 2),
+	@expansions_investment_works_amount AS DECIMAL(19, 2),
+	@stock_amount AS DECIMAL(19, 2),
+	@total_insured_values AS DECIMAL(19, 2),
+	@pml_percentage AS FLOAT(2),
+	@mfl AS FLOAT(2)
 AS
 	BEGIN TRY
 		DECLARE @tran_insert_loss_scenario AS VARCHAR(45) = 'insert_loss_scenario';
@@ -1015,18 +1015,18 @@ AS
 				IF (@id_client IS NOT NULL AND @id_plant IS NOT NULL)
 					BEGIN
 						DECLARE
-							@material_damage_amount_to_save AS DECIMAL(19, 4),
-							@material_damage_percentage_to_save AS DECIMAL(19, 4),
-							@business_interruption_amount_to_save AS DECIMAL(19, 4),
-							@business_interruption_percentage_to_save AS DECIMAL(19, 4),
-							@buildings_amount_to_save AS DECIMAL(19, 4),
-							@machinary_equipment_to_save AS DECIMAL(19, 4),
-							@electronic_equipment_to_save AS DECIMAL(19, 4),
-							@expansions_investment_works_amount_to_save AS DECIMAL(19, 4),
-							@stock_amount_to_save AS DECIMAL(19, 4),
-							@total_insured_values_to_save AS DECIMAL(19, 4),
-							@pml_percentage_to_save AS DECIMAL(19, 4),
-							@mfl_to_save AS DECIMAL(19, 4);
+							@material_damage_amount_to_save AS DECIMAL(19, 2),
+							@material_damage_percentage_to_save AS FLOAT(2),
+							@business_interruption_amount_to_save AS DECIMAL(19, 2),
+							@business_interruption_percentage_to_save AS FLOAT(2),
+							@buildings_amount_to_save AS DECIMAL(19, 2),
+							@machinary_equipment_to_save AS DECIMAL(19, 2),
+							@electronic_equipment_to_save AS DECIMAL(19, 2),
+							@expansions_investment_works_amount_to_save AS DECIMAL(19, 2),
+							@stock_amount_to_save AS DECIMAL(19, 2),
+							@total_insured_values_to_save AS DECIMAL(19, 2),
+							@pml_percentage_to_save AS FLOAT(2),
+							@mfl_to_save AS FLOAT(2);
 
 						SET @material_damage_amount_to_save = ISNULL(@material_damage_amount, 0);
 						SET @material_damage_percentage_to_save = ISNULL(@material_damage_percentage, 0);
@@ -1040,6 +1040,11 @@ AS
 						SET @total_insured_values_to_save = ISNULL(@total_insured_values, 0);
 						SET @pml_percentage_to_save = ISNULL(@pml_percentage, 0);
 						SET @mfl_to_save = ISNULL(@mfl, 0);
+
+						IF (@material_damage_amount_to_save = 0)
+							SET @material_damage_amount_to_save = @buildings_amount_to_save + @machinary_equipment_to_save + @electronic_equipment_to_save + @expansions_investment_works_amount_to_save + @stock_amount_to_save
+						IF (@total_insured_values_to_save = 0)
+							SET @total_insured_values_to_save = @material_damage_amount_to_save + @business_interruption_amount_to_save;
 
 						BEGIN
 							INSERT INTO report.loss_scenario_table(id_report, id_client, id_plant, loss_scenario_material_damage_amount, loss_scenario_material_damage_percentage, loss_scenario_business_interruption_amount,
