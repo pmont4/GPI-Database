@@ -530,7 +530,7 @@ AS
 							INSERT INTO report.plant_table (plant_account_name, plant_name, plant_continent, plant_country, plant_country_state, 
 															plant_construction_year, plant_operation_startup_year, plant_address, plant_latitude, plant_longitude, 
 															plant_meters_above_sea_level, plant_certifications, plant_business_specific_turnover, plant_merchandise_class)
-															VALUES (report.CORRECT_GRAMMAR(@account_name, 'name'), report.CORRECT_GRAMMAR(@name, 'name'), @continent, report.CORRECT_GRAMMAR(@country, 'name'), report.CORRECT_GRAMMAR(@state, 'name'), @date_construction_year, @date_operation_startup,
+															VALUES (@account_name, @name, @continent, report.CORRECT_GRAMMAR(@country, 'name'), report.CORRECT_GRAMMAR(@state, 'name'), @date_construction_year, @date_operation_startup,
 																	@address, @latitude, @longitude, @meters_above_sea_level, @certifications, @specific_turnover, @id_merchandise);
 							BEGIN
 								IF (@type_location IS NOT NULL)
@@ -545,28 +545,26 @@ AS
 											FETCH NEXT FROM cur INTO @val;
 											WHILE @@FETCH_STATUS = 0
 												BEGIN TRY
-													BEGIN TRANSACTION
-														IF ((SELECT TRY_CAST(@val AS INT)) IS NULL)
-															IF EXISTS(SELECT type_location_class_name FROM report.type_location_classification_table 
-																										WHERE type_location_class_name = report.CORRECT_GRAMMAR(@val, 'name'))
-																INSERT INTO report.type_location_table (id_plant, id_type_location_class)
-																VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
-																		(SELECT id_type_location_class FROM report.type_location_classification_table WHERE type_location_class_name = report.CORRECT_GRAMMAR(@val, 'name')));
-															ELSE
-																PRINT CONCAT('No values found in type location table for "', report.CORRECT_GRAMMAR(@val, 'name'), '"');
-														IF ((SELECT TRY_CAST(@val AS INT)) IS NOT NULL)
-															IF EXISTS(SELECT id_type_location_class FROM report.type_location_classification_table
-																									WHERE id_type_location_class = @val)
-																INSERT INTO report.type_location_table (id_plant, id_type_location_class)
-																VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
-																		(SELECT id_type_location_class FROM report.type_location_classification_table WHERE id_type_location_class = @val));
-															ELSE
-																PRINT CONCAT('No values found in type location table for the ID "', @val, '"');
+													IF ((SELECT TRY_CAST(@val AS INT)) IS NULL)
+														IF EXISTS(SELECT type_location_class_name FROM report.type_location_classification_table 
+																									WHERE type_location_class_name = report.CORRECT_GRAMMAR(@val, 'name'))
+															INSERT INTO report.type_location_table (id_plant, id_type_location_class)
+															VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
+																	(SELECT id_type_location_class FROM report.type_location_classification_table WHERE type_location_class_name = report.CORRECT_GRAMMAR(@val, 'name')));
+														ELSE
+															PRINT CONCAT('No values found in type location table for "', report.CORRECT_GRAMMAR(@val, 'name'), '"');
+													IF ((SELECT TRY_CAST(@val AS INT)) IS NOT NULL)
+														IF EXISTS(SELECT id_type_location_class FROM report.type_location_classification_table
+																								WHERE id_type_location_class = @val)
+															INSERT INTO report.type_location_table (id_plant, id_type_location_class)
+															VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
+																	(SELECT id_type_location_class FROM report.type_location_classification_table WHERE id_type_location_class = @val));
+														ELSE
+															PRINT CONCAT('No values found in type location table for the ID "', @val, '"');
 														FETCH NEXT FROM cur INTO @val;
 												END TRY
 												BEGIN CATCH
 													PRINT CONCAT('An error ocurred while trying to insert data in type location table (', ERROR_MESSAGE(), ')');
-													ROLLBACK TRANSACTION;
 													CLOSE cur;
 													DEALLOCATE cur;
 												END CATCH;
@@ -574,23 +572,25 @@ AS
 											DEALLOCATE cur;
 										END;
 									ELSE IF (@type_location NOT LIKE '%,%')
-										IF ((SELECT TRY_CAST(@type_location AS INT)) IS NULL)
-											SET @type_location = report.REMOVE_EXTRA_SPACES(@type_location);
-											IF EXISTS(SELECT type_location_class_name FROM report.type_location_classification_table
-																						WHERE type_location_class_name = @type_location)
-												INSERT INTO report.type_location_table (id_plant, id_type_location_class)
-																VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
-																		(SELECT id_type_location_class FROM report.type_location_classification_table WHERE type_location_class_name = report.CORRECT_GRAMMAR(@type_location, 'name')));
-											ELSE
-												PRINT CONCAT('No values found in type location table for "', report.CORRECT_GRAMMAR(@type_location, 'name'), '"');
-										IF ((SELECT TRY_CAST(@type_location AS INT)) IS NOT NULL)
-											IF EXISTS(SELECT id_type_location_class FROM report.type_location_classification_table
-																						WHERE id_type_location_class = @type_location)
-												INSERT INTO report.type_location_table (id_plant, id_type_location_class)
-																VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
-																		(SELECT id_type_location_class FROM report.type_location_classification_table WHERE id_type_location_class = @type_location));
-											ELSE
-												PRINT CONCAT('No values found in type location table for the ID "', @type_location, '"');
+										BEGIN
+											IF ((SELECT TRY_CAST(@type_location AS INT)) IS NULL)
+												SET @type_location = report.REMOVE_EXTRA_SPACES(@type_location);
+												IF EXISTS(SELECT type_location_class_name FROM report.type_location_classification_table
+																							WHERE type_location_class_name = @type_location)
+													INSERT INTO report.type_location_table (id_plant, id_type_location_class)
+																	VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
+																			(SELECT id_type_location_class FROM report.type_location_classification_table WHERE type_location_class_name = report.CORRECT_GRAMMAR(@type_location, 'name')));
+												ELSE
+													PRINT CONCAT('No values found in type location table for "', report.CORRECT_GRAMMAR(@type_location, 'name'), '"');
+											IF ((SELECT TRY_CAST(@type_location AS INT)) IS NOT NULL)
+												IF EXISTS(SELECT id_type_location_class FROM report.type_location_classification_table
+																							WHERE id_type_location_class = @type_location)
+													INSERT INTO report.type_location_table (id_plant, id_type_location_class)
+																	VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
+																			(SELECT id_type_location_class FROM report.type_location_classification_table WHERE id_type_location_class = @type_location));
+												ELSE
+													PRINT CONCAT('No values found in type location table for the ID "', @type_location, '"');
+										END;
 							END;
 							BEGIN
 								IF (@id_business_turnover_to_insert IS NOT NULL)
@@ -694,6 +694,17 @@ AS
 				END;
 			ELSE IF (@client IS NULL)
 				SET @id_client = 0;
+			IF (@plant IS NOT NULL)
+				BEGIN
+					IF ((SELECT TRY_CAST(@plant AS INT)) IS NULL)
+						BEGIN
+							SET @id_plant = ISNULL((SELECT id_plant FROM report.plant_table WHERE plant_name = @plant), 0);
+						END;
+					ELSE IF ((SELECT TRY_CAST(@plant AS INT)) IS NOT NULL)
+						BEGIN
+							SET @id_plant = ISNULL((SELECT id_plant FROM report.plant_table WHERE id_plant = @plant), 0);
+						END;
+				END;
 		END;
 		IF (@id_client != 0)
 			IF (@id_plant != 0)
