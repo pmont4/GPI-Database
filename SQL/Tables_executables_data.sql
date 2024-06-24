@@ -173,3 +173,4 @@ DBCC CHECKIDENT('report.report_preparation_table', RESEED, 1000);
 DBCC CHECKIDENT('report.plant_table', RESEED, 1000);
 DBCC CHECKIDENT('report.plant_parameters', RESEED, 1000);
 DBCC CHECKIDENT('report.type_location_table', RESEED, 1000);
+DBCC CHECKIDENT('report.business_turnover_table', RESEED, 1000);

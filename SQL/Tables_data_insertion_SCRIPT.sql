@@ -474,6 +474,35 @@ CREATE OR ALTER PROCEDURE report.proc_insert_plant
 	@meters_above_sea_level AS INT
 AS
 	BEGIN TRY
+		BEGIN
+			CREATE TABLE #tempo_business_turnover (
+				id_business_turnover INT,
+				business_turnover_name VARCHAR(50)
+			);
+
+			CREATE TABLE #tempo_merchandise_class (
+				id_merchandise_class INT,
+				merchandise_class_type_name VARCHAR(4)
+			);
+
+			CREATE TABLE #tempo_type_location (
+				id_type_location_class INT,
+				type_location_class_name VARCHAR(15)
+			);
+
+			CREATE CLUSTERED INDEX idx_business_turnover_table ON #tempo_business_turnover(id_business_turnover);
+			CREATE NONCLUSTERED INDEX idx_business_turnover_name  ON #tempo_business_turnover(business_turnover_name);
+
+			CREATE CLUSTERED INDEX idx_merchandise_class ON #tempo_merchandise_class(id_merchandise_class);
+			CREATE NONCLUSTERED INDEX idx_merchandise_class_name  ON #tempo_merchandise_class(merchandise_class_type_name);
+
+			CREATE CLUSTERED INDEX idx_type_location ON #tempo_type_location(id_type_location_class);
+			CREATE NONCLUSTERED INDEX idx_type_location_name  ON #tempo_type_location(type_location_class_name);
+
+			INSERT INTO #tempo_business_turnover SELECT id_business_turnover, business_turnover_name FROM report.business_turnover_class_table;
+			INSERT INTO #tempo_merchandise_class SELECT id_merchandise_classification_type, merchandise_classification_type_name FROM report.merchandise_classification_type_table;
+			INSERT INTO #tempo_type_location SELECT id_type_location_class, type_location_class_name FROM report.type_location_classification_table;
+		END;
 		DECLARE
 			@date_construction_year AS DATETIME,
 			@date_operation_startup AS DATETIME,
@@ -496,32 +525,31 @@ AS
 						DECLARE @id_business_turnover_to_insert AS INT;
 						IF ((SELECT TRY_CAST(@business_turnover AS INT)) IS NULL)
 							BEGIN
-								SET @id_business_turnover_to_insert = ISNULL((SELECT id_business_turnover FROM report.business_turnover_class_table WHERE business_turnover_name = report.CORRECT_GRAMMAR(@business_turnover, 'paragraph')), NULL)
+								SET @id_business_turnover_to_insert = ISNULL((SELECT id_business_turnover FROM #tempo_business_turnover WHERE business_turnover_name = report.CORRECT_GRAMMAR(@business_turnover, 'paragraph')), NULL)
 							END;
 						ELSE IF ((SELECT TRY_CAST(@business_turnover AS INT)) IS NOT NULL)
 							BEGIN
-								SET @id_business_turnover_to_insert = ISNULL((SELECT id_business_turnover FROM report.business_turnover_class_table WHERE id_business_turnover = CAST(@business_turnover AS INT)), null);
+								SET @id_business_turnover_to_insert = ISNULL((SELECT id_business_turnover FROM #tempo_business_turnover WHERE id_business_turnover = CAST(@business_turnover AS INT)), null);
 							END;
 						IF (@id_business_turnover_to_insert IS NOT NULL)
 							BEGIN
-								IF ((SELECT TRY_CAST(@merchandise_classification AS INT)) IS NOT NULL)
-									BEGIN;
-										IF (SELECT id_merchandise_classification_type FROM report.merchandise_classification_type_table 
-																						WHERE id_merchandise_classification_type = @merchandise_classification) IS NOT NULL
-											SET @id_merchandise = (SELECT id_merchandise_classification_type FROM report.merchandise_classification_type_table
-																											WHERE id_merchandise_classification_type = @merchandise_classification);
-										ELSE
-											SET @id_merchandise = null;
-									END;
-								ELSE IF ((SELECT TRY_CAST(@merchandise_classification AS INT)) IS NULL)
-									BEGIN
-										IF (SELECT id_merchandise_classification_type FROM report.merchandise_classification_type_table
-																							WHERE merchandise_classification_type_name = UPPER(@merchandise_classification)) IS NOT NULL
-											SET @id_merchandise = (SELECT id_merchandise_classification_type FROM report.merchandise_classification_type_table
-																											WHERE merchandise_classification_type_name = UPPER(@merchandise_classification));
-										ELSE
-											SET @id_merchandise = null;
-									END;
+								IF (@merchandise_classification IS NOT NULL)
+									IF ((SELECT TRY_CAST(@merchandise_classification AS INT)) IS NOT NULL)
+										BEGIN;
+											SET @id_merchandise = ISNULL((SELECT id_merchandise_class FROM #tempo_merchandise_class WHERE id_merchandise_class = @merchandise_classification),
+																		NULL);
+											IF (@id_merchandise IS NULL)
+												PRINT(CONCAT('Cannot find the merchandise classification with the name/id "', @merchandise_classification, '"'));
+										END;
+									ELSE IF ((SELECT TRY_CAST(@merchandise_classification AS VARCHAR)) IS NOT NULL)
+										BEGIN
+											SET @id_merchandise = ISNULL((SELECT id_merchandise_class FROM #tempo_merchandise_class WHERE merchandise_class_type_name = UPPER(@merchandise_classification)),
+																		NULL);
+											IF (@id_merchandise IS NULL)
+												PRINT(CONCAT('Cannot find the merchandise classification with the name/id "', @merchandise_classification, '"'));
+										END;
+								ELSE IF (@merchandise_classification IS NULL)
+									SET @id_merchandise = NULL;
 							END;
 							INSERT INTO report.plant_table (plant_account_name, plant_name, plant_continent, plant_country, plant_country_state, 
 															plant_construction_year, plant_operation_startup_year, plant_address, plant_latitude, plant_longitude, 
@@ -541,20 +569,18 @@ AS
 											FETCH NEXT FROM cur INTO @val;
 											WHILE @@FETCH_STATUS = 0
 												BEGIN TRY
-													IF ((SELECT TRY_CAST(@val AS INT)) IS NULL)
-														IF (SELECT type_location_class_name FROM report.type_location_classification_table 
-																									WHERE type_location_class_name = report.CORRECT_GRAMMAR(@val, 'name')) IS NOT NULL
+													IF ((SELECT TRY_CAST(@val AS VARCHAR)) IS NOT NULL)
+														IF (SELECT type_location_class_name FROM #tempo_type_location WHERE type_location_class_name = report.CORRECT_GRAMMAR(@val, 'name')) IS NOT NULL
 															INSERT INTO report.type_location_table (id_plant, id_type_location_class)
 															VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
-																	(SELECT id_type_location_class FROM report.type_location_classification_table WHERE type_location_class_name = report.CORRECT_GRAMMAR(@val, 'name')));
+																	(SELECT id_type_location_class FROM #tempo_type_location WHERE type_location_class_name = report.CORRECT_GRAMMAR(@val, 'name')));
 														ELSE
 															PRINT CONCAT('No values found in type location table for "', report.CORRECT_GRAMMAR(@val, 'name'), '"');
 													IF ((SELECT TRY_CAST(@val AS INT)) IS NOT NULL)
-														IF (SELECT id_type_location_class FROM report.type_location_classification_table
-																								WHERE id_type_location_class = @val) IS NOT NULL
+														IF (SELECT id_type_location_class FROM #tempo_type_location WHERE id_type_location_class = @val) IS NOT NULL
 															INSERT INTO report.type_location_table (id_plant, id_type_location_class)
 															VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
-																	(SELECT id_type_location_class FROM report.type_location_classification_table WHERE id_type_location_class = @val));
+																	(SELECT id_type_location_class FROM #tempo_type_location WHERE id_type_location_class = @val));
 														ELSE
 															PRINT CONCAT('No values found in type location table for the ID "', @val, '"');
 														FETCH NEXT FROM cur INTO @val;
@@ -569,21 +595,19 @@ AS
 										END;
 									ELSE IF (@type_location NOT LIKE '%,%')
 										BEGIN
-											IF ((SELECT TRY_CAST(@type_location AS INT)) IS NULL)
+											IF ((SELECT TRY_CAST(@type_location AS VARCHAR)) IS NOT NULL)
 												SET @type_location = report.REMOVE_EXTRA_SPACES(@type_location);
-												IF (SELECT type_location_class_name FROM report.type_location_classification_table
-																							WHERE type_location_class_name = @type_location) IS NOT NULL
+												IF (SELECT type_location_class_name FROM #tempo_type_location WHERE type_location_class_name = @type_location) IS NOT NULL
 													INSERT INTO report.type_location_table (id_plant, id_type_location_class)
 																	VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
-																			(SELECT id_type_location_class FROM report.type_location_classification_table WHERE type_location_class_name = report.CORRECT_GRAMMAR(@type_location, 'name')));
+																			(SELECT id_type_location_class FROM #tempo_type_location WHERE type_location_class_name = report.CORRECT_GRAMMAR(@type_location, 'name')));
 												ELSE
 													PRINT CONCAT('No values found in type location table for "', report.CORRECT_GRAMMAR(@type_location, 'name'), '"');
 											IF ((SELECT TRY_CAST(@type_location AS INT)) IS NOT NULL)
-												IF (SELECT id_type_location_class FROM report.type_location_classification_table
-																							WHERE id_type_location_class = @type_location) IS NOT NULL
+												IF (SELECT id_type_location_class FROM #tempo_type_location WHERE id_type_location_class = @type_location) IS NOT NULL
 													INSERT INTO report.type_location_table (id_plant, id_type_location_class)
 																	VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
-																			(SELECT id_type_location_class FROM report.type_location_classification_table WHERE id_type_location_class = @type_location));
+																			(SELECT id_type_location_class FROM #tempo_type_location WHERE id_type_location_class = @type_location));
 												ELSE
 													PRINT CONCAT('No values found in type location table for the ID "', @type_location, '"');
 										END;
@@ -602,6 +626,10 @@ AS
 			ELSE
 				PRINT ('Cannot insert the data because there are some field left in blank.');
 		END;
+
+		DROP TABLE #tempo_merchandise_class;
+		DROP TABLE #tempo_business_turnover;
+		DROP TABLE #tempo_type_location;
 	END TRY
 	BEGIN CATCH
 		PRINT CONCAT('Cannot insert the plant  "', report.CORRECT_GRAMMAR(@name, 'name'),'" in the database due to this error: (', ERROR_MESSAGE(), ')');
