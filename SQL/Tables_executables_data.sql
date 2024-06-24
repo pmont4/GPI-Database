@@ -164,13 +164,3 @@ EXEC report.proc_insert_perils_and_risk_table 1005, '1029', '2.5', 'light', 'lig
 -- You can leave the material damage and the total insured values in blank if you want, just be aware of giving all the values to the command so the database can calculate those values for you.
 
 EXEC report.proc_insert_loss_scenario_table 1005, 1000, 1029, 15963716.63, 85, 9129876, 75, 2343287.10, 3620429.53, null, null, 0, 25093592.63, 82, null;
-
-
-DBCC CHECKIDENT('report.loss_scenario_table', RESEED, 1000);
-DBCC CHECKIDENT('report.report_table', RESEED, 1000);
-DBCC CHECKIDENT('report.perils_and_risk_table', RESEED, 1000);
-DBCC CHECKIDENT('report.report_preparation_table', RESEED, 1000);
-DBCC CHECKIDENT('report.plant_table', RESEED, 1000);
-DBCC CHECKIDENT('report.plant_parameters', RESEED, 1000);
-DBCC CHECKIDENT('report.type_location_table', RESEED, 1000);
-DBCC CHECKIDENT('report.business_turnover_table', RESEED, 1000);

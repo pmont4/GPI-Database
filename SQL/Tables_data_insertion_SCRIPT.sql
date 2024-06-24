@@ -990,10 +990,6 @@ AS
 		END CATCH;
 --
 
-SET STATISTICS TIME ON;
-
-EXEC report.proc_insert_report '1/november/2019', '1000', 'TATA - Accesorios Globales, S.A.', '1000', '240000.00,units/Month', 12850.00, 'Light', 1, null, null, null, 0, 0, 0, 1, 0, 1, 1;
-
 -- Perils and risk table data scripts
 --
 CREATE OR ALTER PROCEDURE report.proc_insert_perils_and_risk_table

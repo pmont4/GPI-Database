@@ -79,6 +79,7 @@ EXEC view_table 'ls';
 
 
 DELETE FROM report.report_table;
+DELETE FROM report.plant_table;
 
 -- Columns
 SELECT C.COLUMN_NAME AS 'Nombre de la columna', C.DATA_TYPE AS 'Tipo de la columna' FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'plant_table';
@@ -98,3 +99,124 @@ SELECT C.COLUMN_NAME AS 'Nombre de la columna', C.DATA_TYPE AS 'Tipo de la colum
 SELECT C.COLUMN_NAME AS 'Nombre de la columna', C.DATA_TYPE AS 'Tipo de la columna' FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'type_location_table';
 SELECT C.COLUMN_NAME AS 'Nombre de la columna', C.DATA_TYPE AS 'Tipo de la columna' FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'business_turnover_class_table';
 SELECT C.COLUMN_NAME AS 'Nombre de la columna', C.DATA_TYPE AS 'Tipo de la columna' FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'business_turnover_table';
+
+-- Triggers for restarting the id count 
+
+CREATE OR ALTER TRIGGER trigger_ident_plant ON report.plant_table
+AFTER DELETE AS
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM report.plant_table)
+			DBCC CHECKIDENT('report.plant_table', RESEED, 1000);
+	END;
+
+CREATE OR ALTER TRIGGER trigger_ident_report ON report.report_table
+AFTER DELETE AS
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM report.report_table)
+			DBCC CHECKIDENT('report.report_table', RESEED, 1000);
+	END;
+
+CREATE OR ALTER TRIGGER trigger_ident_report_preparation ON report.report_preparation_table
+AFTER DELETE AS
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM report.report_preparation_table)
+			DBCC CHECKIDENT('report.report_preparation_table', RESEED, 1000);
+	END;
+
+CREATE OR ALTER TRIGGER trigger_ident_plant_parameters ON report.plant_parameters
+AFTER DELETE AS
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM report.plant_parameters)
+			DBCC CHECKIDENT('report.plant_parameters', RESEED, 1000);
+	END;
+
+CREATE OR ALTER TRIGGER trigger_ident_type_location ON report.type_location_table
+AFTER DELETE AS
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM report.type_location_table)
+			DBCC CHECKIDENT('report.type_location_table', RESEED, 1000);
+	END;
+
+CREATE OR ALTER TRIGGER trigger_ident_business_turnover ON report.business_turnover_table
+AFTER DELETE AS
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM report.business_turnover_table)
+			DBCC CHECKIDENT('report.business_turnover_table', RESEED, 1000);
+	END;
+
+CREATE OR ALTER TRIGGER trigger_ident_perils_and_risk ON report.perils_and_risk_table
+AFTER DELETE AS
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM report.perils_and_risk_table)
+			DBCC CHECKIDENT('report.perils_and_risk_table', RESEED, 1000);
+	END;
+
+CREATE OR ALTER TRIGGER trigger_ident_loss_scenario ON report.loss_scenario_table
+AFTER DELETE AS
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM report.loss_scenario_table)
+			DBCC CHECKIDENT('report.loss_scenario_table', RESEED, 1000);
+	END;
+
+CREATE OR ALTER TRIGGER trigger_ident_engineer ON report.engineer_table
+AFTER DELETE AS
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM report.engineer_table)
+			DBCC CHECKIDENT('report.engineer_table', RESEED, 1000);
+	END;
+
+CREATE OR ALTER TRIGGER trigger_ident_client ON report.client_table
+AFTER DELETE AS
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM report.client_table)
+			DBCC CHECKIDENT('report.client_table', RESEED, 1000);
+	END;
+
+CREATE OR ALTER TRIGGER trigger_ident_merchandise_classification_type ON report.merchandise_classification_type_table
+AFTER DELETE AS
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM report.merchandise_classification_type_table)
+			DBCC CHECKIDENT('report.merchandise_classification_type_table', RESEED, 1000);
+	END;
+
+CREATE OR ALTER TRIGGER trigger_ident_hydrant_protection_classification ON report.hydrant_protection_classification_table
+AFTER DELETE AS
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM report.hydrant_protection_classification_table)
+			DBCC CHECKIDENT('report.hydrant_protection_classification_table', RESEED, 1000);
+	END;
+
+CREATE OR ALTER TRIGGER trigger_ident_hydrant_standpipe_system_class ON report.hydrant_standpipe_system_class_table
+AFTER DELETE AS
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM report.hydrant_standpipe_system_class_table)
+			DBCC CHECKIDENT('report.hydrant_standpipe_system_class_table', RESEED, 1000);
+	END;
+
+CREATE OR ALTER TRIGGER trigger_ident_hydrant_standpipe_system_type ON report.hydrant_standpipe_system_type_table
+AFTER DELETE AS
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM report.hydrant_standpipe_system_type_table)
+			DBCC CHECKIDENT('report.hydrant_standpipe_system_type_table', RESEED, 1000);
+	END;
+
+CREATE OR ALTER TRIGGER trigger_ident_capacity_type ON report.capacity_type_table
+AFTER DELETE AS
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM report.capacity_type_table)
+			DBCC CHECKIDENT('report.capacity_type_table', RESEED, 1000);
+	END;
+
+CREATE OR ALTER TRIGGER trigger_ident_type_location_classification_type ON report.type_location_classification_table
+AFTER DELETE AS
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM report.type_location_classification_table)
+			DBCC CHECKIDENT('report.type_location_classification_table', RESEED, 1000);
+	END;
+
+CREATE OR ALTER TRIGGER trigger_ident_business_turnover_classification_type ON report.business_turnover_class_table
+AFTER DELETE AS
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM report.business_turnover_class_table)
+			DBCC CHECKIDENT('report.business_turnover_class_table', RESEED, 1000);
+	END;
