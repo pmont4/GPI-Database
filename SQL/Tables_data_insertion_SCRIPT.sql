@@ -475,33 +475,33 @@ CREATE OR ALTER PROCEDURE report.proc_insert_plant
 AS
 	BEGIN TRY
 		BEGIN
-			CREATE TABLE #tempo_business_turnover (
+			CREATE TABLE #temp_business_turnover_plant (
 				id_business_turnover INT,
 				business_turnover_name VARCHAR(50)
 			);
 
-			CREATE TABLE #tempo_merchandise_class (
+			CREATE TABLE #temp_merchandise_class_plant (
 				id_merchandise_class INT,
 				merchandise_class_type_name VARCHAR(4)
 			);
 
-			CREATE TABLE #tempo_type_location (
+			CREATE TABLE #temp_type_location_plant (
 				id_type_location_class INT,
 				type_location_class_name VARCHAR(15)
 			);
 
-			CREATE CLUSTERED INDEX idx_business_turnover_table ON #tempo_business_turnover(id_business_turnover);
-			CREATE NONCLUSTERED INDEX idx_business_turnover_name  ON #tempo_business_turnover(business_turnover_name);
+			CREATE CLUSTERED INDEX idx_temp_business_turnover_table_plant ON #temp_business_turnover_plant(id_business_turnover);
+			CREATE NONCLUSTERED INDEX idx_business_turnover_name  ON #temp_business_turnover_plant(business_turnover_name);
 
-			CREATE CLUSTERED INDEX idx_merchandise_class ON #tempo_merchandise_class(id_merchandise_class);
-			CREATE NONCLUSTERED INDEX idx_merchandise_class_name  ON #tempo_merchandise_class(merchandise_class_type_name);
+			CREATE CLUSTERED INDEX idx_temp_merchandise_class_plant ON #temp_merchandise_class_plant(id_merchandise_class);
+			CREATE NONCLUSTERED INDEX idx_temp_merchandise_class_name_plant ON #temp_merchandise_class_plant(merchandise_class_type_name);
 
-			CREATE CLUSTERED INDEX idx_type_location ON #tempo_type_location(id_type_location_class);
-			CREATE NONCLUSTERED INDEX idx_type_location_name  ON #tempo_type_location(type_location_class_name);
+			CREATE CLUSTERED INDEX idx_temp_type_location_plant ON #temp_type_location_plant(id_type_location_class);
+			CREATE NONCLUSTERED INDEX idx_temp_type_location_name_plant  ON #temp_type_location_plant(type_location_class_name);
 
-			INSERT INTO #tempo_business_turnover SELECT id_business_turnover, business_turnover_name FROM report.business_turnover_class_table;
-			INSERT INTO #tempo_merchandise_class SELECT id_merchandise_classification_type, merchandise_classification_type_name FROM report.merchandise_classification_type_table;
-			INSERT INTO #tempo_type_location SELECT id_type_location_class, type_location_class_name FROM report.type_location_classification_table;
+			INSERT INTO #temp_business_turnover_plant SELECT id_business_turnover, business_turnover_name FROM report.business_turnover_class_table;
+			INSERT INTO #temp_merchandise_class_plant SELECT id_merchandise_classification_type, merchandise_classification_type_name FROM report.merchandise_classification_type_table;
+			INSERT INTO #temp_type_location_plant SELECT id_type_location_class, type_location_class_name FROM report.type_location_classification_table;
 		END;
 		DECLARE
 			@date_construction_year AS DATETIME,
@@ -525,25 +525,25 @@ AS
 						DECLARE @id_business_turnover_to_insert AS INT;
 						IF ((SELECT TRY_CAST(@business_turnover AS INT)) IS NULL)
 							BEGIN
-								SET @id_business_turnover_to_insert = ISNULL((SELECT id_business_turnover FROM #tempo_business_turnover WHERE business_turnover_name = report.CORRECT_GRAMMAR(@business_turnover, 'paragraph')), NULL)
+								SET @id_business_turnover_to_insert = ISNULL((SELECT id_business_turnover FROM #temp_business_turnover_plant WHERE business_turnover_name = report.CORRECT_GRAMMAR(@business_turnover, 'paragraph')), NULL)
 							END;
 						ELSE IF ((SELECT TRY_CAST(@business_turnover AS INT)) IS NOT NULL)
 							BEGIN
-								SET @id_business_turnover_to_insert = ISNULL((SELECT id_business_turnover FROM #tempo_business_turnover WHERE id_business_turnover = CAST(@business_turnover AS INT)), null);
+								SET @id_business_turnover_to_insert = ISNULL((SELECT id_business_turnover FROM #temp_business_turnover_plant WHERE id_business_turnover = CAST(@business_turnover AS INT)), null);
 							END;
 						IF (@id_business_turnover_to_insert IS NOT NULL)
 							BEGIN
 								IF (@merchandise_classification IS NOT NULL)
 									IF ((SELECT TRY_CAST(@merchandise_classification AS INT)) IS NOT NULL)
 										BEGIN;
-											SET @id_merchandise = ISNULL((SELECT id_merchandise_class FROM #tempo_merchandise_class WHERE id_merchandise_class = @merchandise_classification),
+											SET @id_merchandise = ISNULL((SELECT id_merchandise_class FROM #temp_merchandise_class_plant WHERE id_merchandise_class = @merchandise_classification),
 																		NULL);
 											IF (@id_merchandise IS NULL)
 												PRINT(CONCAT('Cannot find the merchandise classification with the name/id "', @merchandise_classification, '"'));
 										END;
 									ELSE IF ((SELECT TRY_CAST(@merchandise_classification AS VARCHAR)) IS NOT NULL)
 										BEGIN
-											SET @id_merchandise = ISNULL((SELECT id_merchandise_class FROM #tempo_merchandise_class WHERE merchandise_class_type_name = UPPER(@merchandise_classification)),
+											SET @id_merchandise = ISNULL((SELECT id_merchandise_class FROM #temp_merchandise_class_plant WHERE merchandise_class_type_name = UPPER(@merchandise_classification)),
 																		NULL);
 											IF (@id_merchandise IS NULL)
 												PRINT(CONCAT('Cannot find the merchandise classification with the name/id "', @merchandise_classification, '"'));
@@ -570,17 +570,17 @@ AS
 											WHILE @@FETCH_STATUS = 0
 												BEGIN TRY
 													IF ((SELECT TRY_CAST(@val AS VARCHAR)) IS NOT NULL)
-														IF (SELECT type_location_class_name FROM #tempo_type_location WHERE type_location_class_name = report.CORRECT_GRAMMAR(@val, 'name')) IS NOT NULL
+														IF (SELECT type_location_class_name FROM #temp_type_location_plant WHERE type_location_class_name = report.CORRECT_GRAMMAR(@val, 'name')) IS NOT NULL
 															INSERT INTO report.type_location_table (id_plant, id_type_location_class)
 															VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
-																	(SELECT id_type_location_class FROM #tempo_type_location WHERE type_location_class_name = report.CORRECT_GRAMMAR(@val, 'name')));
+																	(SELECT id_type_location_class FROM #temp_type_location_plant WHERE type_location_class_name = report.CORRECT_GRAMMAR(@val, 'name')));
 														ELSE
 															PRINT CONCAT('No values found in type location table for "', report.CORRECT_GRAMMAR(@val, 'name'), '"');
 													IF ((SELECT TRY_CAST(@val AS INT)) IS NOT NULL)
-														IF (SELECT id_type_location_class FROM #tempo_type_location WHERE id_type_location_class = @val) IS NOT NULL
+														IF (SELECT id_type_location_class FROM #temp_type_location_plant WHERE id_type_location_class = @val) IS NOT NULL
 															INSERT INTO report.type_location_table (id_plant, id_type_location_class)
 															VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
-																	(SELECT id_type_location_class FROM #tempo_type_location WHERE id_type_location_class = @val));
+																	(SELECT id_type_location_class FROM #temp_type_location_plant WHERE id_type_location_class = @val));
 														ELSE
 															PRINT CONCAT('No values found in type location table for the ID "', @val, '"');
 														FETCH NEXT FROM cur INTO @val;
@@ -597,17 +597,17 @@ AS
 										BEGIN
 											IF ((SELECT TRY_CAST(@type_location AS VARCHAR)) IS NOT NULL)
 												SET @type_location = report.REMOVE_EXTRA_SPACES(@type_location);
-												IF (SELECT type_location_class_name FROM #tempo_type_location WHERE type_location_class_name = @type_location) IS NOT NULL
+												IF (SELECT type_location_class_name FROM #temp_type_location_plant WHERE type_location_class_name = @type_location) IS NOT NULL
 													INSERT INTO report.type_location_table (id_plant, id_type_location_class)
 																	VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
-																			(SELECT id_type_location_class FROM #tempo_type_location WHERE type_location_class_name = report.CORRECT_GRAMMAR(@type_location, 'name')));
+																			(SELECT id_type_location_class FROM #temp_type_location_plant WHERE type_location_class_name = report.CORRECT_GRAMMAR(@type_location, 'name')));
 												ELSE
 													PRINT CONCAT('No values found in type location table for "', report.CORRECT_GRAMMAR(@type_location, 'name'), '"');
 											IF ((SELECT TRY_CAST(@type_location AS INT)) IS NOT NULL)
-												IF (SELECT id_type_location_class FROM #tempo_type_location WHERE id_type_location_class = @type_location) IS NOT NULL
+												IF (SELECT id_type_location_class FROM #temp_type_location_plant WHERE id_type_location_class = @type_location) IS NOT NULL
 													INSERT INTO report.type_location_table (id_plant, id_type_location_class)
 																	VALUES ((SELECT MAX(id_plant) FROM report.plant_table), 
-																			(SELECT id_type_location_class FROM #tempo_type_location WHERE id_type_location_class = @type_location));
+																			(SELECT id_type_location_class FROM #temp_type_location_plant WHERE id_type_location_class = @type_location));
 												ELSE
 													PRINT CONCAT('No values found in type location table for the ID "', @type_location, '"');
 										END;
@@ -627,9 +627,9 @@ AS
 				PRINT ('Cannot insert the data because there are some field left in blank.');
 		END;
 
-		DROP TABLE #tempo_merchandise_class;
-		DROP TABLE #tempo_business_turnover;
-		DROP TABLE #tempo_type_location;
+		DROP TABLE #temp_business_turnover_plant;
+		DROP TABLE #temp_merchandise_class_plant;
+		DROP TABLE #temp_type_location_plant;
 	END TRY
 	BEGIN CATCH
 		PRINT CONCAT('Cannot insert the plant  "', report.CORRECT_GRAMMAR(@name, 'name'),'" in the database due to this error: (', ERROR_MESSAGE(), ')');
@@ -700,63 +700,65 @@ CREATE OR ALTER PROCEDURE report.proc_insert_report
 AS
 		BEGIN TRY
 			BEGIN
-				CREATE TABLE #tempo_plant_table (
+				CREATE TABLE #temp_plant_table_report (
 					id_plant INT,
-					account_name VARCHAR(150)
+					account_name VARCHAR(150),
+					plant_name VARCHAR(150)
 				);
-				CREATE TABLE #tempo_client_table (
+				CREATE TABLE #temp_client_table_report (
 					id_client INT,
 					client_name VARCHAR(150)
 				);
-				CREATE TABLE #tempo_engineer_table (
+				CREATE TABLE #temp_engineer_table_report (
 					id_engineer INT,
 					engineer_name VARCHAR(150)
 				);
-				CREATE TABLE #tempo_hydrant_protection_table (
+				CREATE TABLE #temp_hydrant_protection_table_report (
 					id_protection INT,
 					protection_name VARCHAR(50)
 				);
-				CREATE TABLE #tempo_hydrant_standpipe_type (
+				CREATE TABLE #temp_hydrant_standpipe_type_report (
 					id_hydrant_standpipe_type INT,
 					name_hydrant_standpipe_type VARCHAR(50)
 				);
-				CREATE TABLE #tempo_hydrant_standpipe_class (
+				CREATE TABLE #temp_hydrant_standpipe_class_report (
 					id_hydrant_standpipe_class INT,
 					name_hydrant_standpipe_class VARCHAR(50)
 				);
-				CREATE TABLE #tempo_capacity_type_table (
+				CREATE TABLE #temp_capacity_type_table_report (
 					id_capacity_type INT,
 					capacity_type_name VARCHAR(50)
 				);
 
-				CREATE CLUSTERED INDEX idx_temp_plant_table ON #tempo_plant_table(id_plant);
-				CREATE NONCLUSTERED INDEX idx_temp_plant_table_name ON #tempo_plant_table(account_name);
+				CREATE CLUSTERED INDEX idx_temp_plant_table_report ON #temp_plant_table_report(id_plant);
+				CREATE NONCLUSTERED INDEX idx_temp_plant_table_acc_name_report ON #temp_plant_table_report(account_name);
+				CREATE NONCLUSTERED INDEX idx_temp_plant_table_plant_name_report ON #temp_plant_table_report(plant_name);
 
-				CREATE CLUSTERED INDEX idx_temp_client_table ON #tempo_client_table(id_client);
-				CREATE NONCLUSTERED INDEX idx_temp_client_table_name ON #tempo_client_table(client_name);
+				CREATE CLUSTERED INDEX idx_temp_client_table_report ON #temp_client_table_report(id_client);
+				CREATE NONCLUSTERED INDEX idx_temp_client_table_name_report ON #temp_client_table_report(client_name);
 
-				CREATE CLUSTERED INDEX idx_temp_engineer_table ON #tempo_engineer_table(id_engineer);
-				CREATE NONCLUSTERED INDEX idx_temp_engineer_table_name ON #tempo_engineer_table(engineer_name);
+				CREATE CLUSTERED INDEX idx_temp_engineer_table_report ON #temp_engineer_table_report(id_engineer);
+				CREATE NONCLUSTERED INDEX idx_temp_engineer_table_name_report ON #temp_engineer_table_report(engineer_name);
 
-				CREATE CLUSTERED INDEX idx_temp_hydrant_protection_table ON #tempo_hydrant_protection_table(id_protection);
-				CREATE NONCLUSTERED INDEX idx_temp_hydrant_protection_table_name ON #tempo_hydrant_protection_table(protection_name);
+				CREATE CLUSTERED INDEX idx_temp_hydrant_protection_table_report ON #temp_hydrant_protection_table_report(id_protection);
+				CREATE NONCLUSTERED INDEX idx_temp_hydrant_protection_table_name_report ON #temp_hydrant_protection_table_report(protection_name);
 
-				CREATE CLUSTERED INDEX idx_temp_hydrant_standpipe_type_table ON #tempo_hydrant_standpipe_type(id_hydrant_standpipe_type);
-				CREATE NONCLUSTERED INDEX idx_temp_hydrant_standpipe_type_table_name ON #tempo_hydrant_standpipe_type(name_hydrant_standpipe_type);
+				CREATE CLUSTERED INDEX idx_temp_hydrant_standpipe_type_table_report ON #temp_hydrant_standpipe_type_report(id_hydrant_standpipe_type);
+				CREATE NONCLUSTERED INDEX idx_temp_hydrant_standpipe_type_table_name_report ON #temp_hydrant_standpipe_type_report(name_hydrant_standpipe_type);
 
-				CREATE CLUSTERED INDEX idx_temp_hydrant_standpipe_class_table ON #tempo_hydrant_standpipe_class(id_hydrant_standpipe_class);
-				CREATE NONCLUSTERED INDEX idx_temp_hydrant_standpipe_class_table_name ON #tempo_hydrant_standpipe_class(name_hydrant_standpipe_class);
+				CREATE CLUSTERED INDEX idx_temp_hydrant_standpipe_class_table_report ON #temp_hydrant_standpipe_class_report(id_hydrant_standpipe_class);
+				CREATE NONCLUSTERED INDEX idx_temp_hydrant_standpipe_class_table_name_report ON #temp_hydrant_standpipe_class_report(name_hydrant_standpipe_class);
 
-				CREATE CLUSTERED INDEX idx_temp_capacity_type_table ON #tempo_capacity_type_table(id_capacity_type);
-				CREATE NONCLUSTERED INDEX idx_temp_capacity_type_table_name ON #tempo_capacity_type_table(capacity_type_name);
+				CREATE CLUSTERED INDEX idx_temp_capacity_type_table_report ON #temp_capacity_type_table_report(id_capacity_type);
+				CREATE NONCLUSTERED INDEX idx_temp_capacity_type_table_name_report ON #temp_capacity_type_table_report(capacity_type_name);
 
-				INSERT INTO #tempo_client_table SELECT id_client, client_name FROM report.client_table;
-				INSERT INTO #tempo_plant_table SELECT id_plant, plant_account_name FROM report.plant_table
-				INSERT INTO #tempo_engineer_table SELECT id_engineer, engineer_name FROM report.engineer_table;
-				INSERT INTO #tempo_hydrant_protection_table SELECT id_hydrant_protection_classification, hydrant_protection_classification_name FROM report.hydrant_protection_classification_table;
-				INSERT INTO #tempo_hydrant_standpipe_type SELECT id_hydrant_standpipe_system_type, hydrant_standpipe_system_type_name FROM report.hydrant_standpipe_system_type_table;
-				INSERT INTO #tempo_hydrant_standpipe_class SELECT id_hydrant_standpipe_system_class, hydrant_standpipe_system_class_name FROM report.hydrant_standpipe_system_class_table;
-				INSERT INTO #tempo_capacity_type_table SELECT id_capacity_type, capacity_type_name FROM report.capacity_type_table;
+				INSERT INTO #temp_client_table_report SELECT id_client, client_name FROM report.client_table;
+				INSERT INTO #temp_plant_table_report SELECT id_plant, plant_account_name FROM report.plant_table
+				INSERT INTO #temp_engineer_table_report SELECT id_engineer, engineer_name FROM report.engineer_table;
+				INSERT INTO #temp_hydrant_protection_table_report SELECT id_hydrant_protection_classification, hydrant_protection_classification_name FROM report.hydrant_protection_classification_table;
+				INSERT INTO #temp_hydrant_standpipe_type_report SELECT id_hydrant_standpipe_system_type, hydrant_standpipe_system_type_name FROM report.hydrant_standpipe_system_type_table;
+				INSERT INTO #temp_hydrant_standpipe_class_report SELECT id_hydrant_standpipe_system_class, hydrant_standpipe_system_class_name FROM report.hydrant_standpipe_system_class_table;
+				INSERT INTO #temp_capacity_type_table_report SELECT id_capacity_type, capacity_type_name FROM report.capacity_type_table;
 			END;
 
 			BEGIN
@@ -765,14 +767,14 @@ AS
 					@id_plant_to_save AS INT;
 
 				IF ((TRY_CAST(@plant AS INT)) IS NOT NULL)
-					SET @id_plant_to_save = ISNULL((SELECT id_plant FROM #tempo_plant_table WHERE id_plant = CAST(@plant AS INT)), 0);
+					SET @id_plant_to_save = ISNULL((SELECT id_plant FROM #temp_plant_table_report WHERE id_plant = CAST(@plant AS INT)), 0);
 				ELSE IF ((TRY_CAST(@plant AS INT)) IS NULL)
-					SET @id_plant_to_save = ISNULL((SELECT id_plant FROM #tempo_plant_table WHERE account_name = @plant), 0);
+					SET @id_plant_to_save = ISNULL((SELECT id_plant FROM #temp_plant_table_report WHERE account_name = @plant OR plant_name = @plant), 0);
 
 				IF ((TRY_CAST(@client AS INT)) IS NOT NULL)
-					SET @id_client_to_save = ISNULL((SELECT id_client FROM #tempo_client_table WHERE id_client = CAST(@client AS INT)), 0);
+					SET @id_client_to_save = ISNULL((SELECT id_client FROM #temp_client_table_report WHERE id_client = CAST(@client AS INT)), 0);
 				ELSE IF ((TRY_CAST(@client AS INT)) IS NULL)
-					SET @id_client_to_save = ISNULL((SELECT id_client FROM #tempo_client_table WHERE client_name = @client), 0);
+					SET @id_client_to_save = ISNULL((SELECT id_client FROM #temp_client_table_report WHERE client_name = @client), 0);
 
 				IF (@id_client_to_save != 0 AND @id_plant_to_save != 0)
 					BEGIN
@@ -791,22 +793,22 @@ AS
 										BEGIN TRY
 											IF (TRY_CAST(@engineer_value AS INT) IS NULL)
 												BEGIN
-													IF (SELECT id_engineer FROM #tempo_engineer_table WHERE engineer_name = report.CORRECT_GRAMMAR(@engineer_value, 'name')) IS NOT NULL
+													IF (SELECT id_engineer FROM #temp_engineer_table_report WHERE engineer_name = report.CORRECT_GRAMMAR(@engineer_value, 'name')) IS NOT NULL
 														BEGIN
 															INSERT INTO report.report_preparation_table(id_report, id_engineer)
 																										VALUES ((SELECT TOP 1 id_report FROM report.report_table ORDER BY id_report DESC),
-																												(SELECT id_engineer FROM #tempo_engineer_table WHERE engineer_name = report.CORRECT_GRAMMAR(@engineer_value, 'name')));
+																												(SELECT id_engineer FROM #temp_engineer_table_report WHERE engineer_name = report.CORRECT_GRAMMAR(@engineer_value, 'name')));
 														END;
 													ELSE
 														THROW 51000, 'Cannot find the engineer in the engineer table', 1;
 												END;
 											ELSE IF (TRY_CAST(@engineer_value AS INT) IS NOT NULL)
 												BEGIN
-													IF (SELECT id_engineer FROM #tempo_engineer_table WHERE id_engineer = @engineer_value) IS NOT NULL
+													IF (SELECT id_engineer FROM #temp_engineer_table_report WHERE id_engineer = @engineer_value) IS NOT NULL
 														BEGIN
 															INSERT INTO report.report_preparation_table(id_report, id_engineer)
 																										VALUES ((SELECT TOP 1 id_report FROM report.report_table ORDER BY id_report DESC),
-																												(SELECT id_engineer FROM #tempo_engineer_table WHERE id_engineer = CAST(@engineer_value AS INT)));
+																												(SELECT id_engineer FROM #temp_engineer_table_report WHERE id_engineer = CAST(@engineer_value AS INT)));
 														END;
 													ELSE
 														THROW 51000, 'Cannot find the engineer in the engineer table', 1;
@@ -824,22 +826,22 @@ AS
 									BEGIN
 										IF (TRY_CAST(@prepared_by AS INT) IS NULL)
 											BEGIN
-												IF (SELECT id_engineer FROM #tempo_engineer_table WHERE engineer_name = report.CORRECT_GRAMMAR(@prepared_by, 'name')) IS NOT NULL
+												IF (SELECT id_engineer FROM #temp_engineer_table_report WHERE engineer_name = report.CORRECT_GRAMMAR(@prepared_by, 'name')) IS NOT NULL
 													BEGIN
 														INSERT INTO report.report_preparation_table(id_report, id_engineer)
 																									VALUES ((SELECT TOP 1 id_report FROM report.report_table ORDER BY id_report DESC),
-																											(SELECT id_engineer FROM #tempo_engineer_table WHERE engineer_name = report.CORRECT_GRAMMAR(@prepared_by, 'name')));
+																											(SELECT id_engineer FROM #temp_engineer_table_report WHERE engineer_name = report.CORRECT_GRAMMAR(@prepared_by, 'name')));
 													END;
 												ELSE
 													THROW 51000, 'Cannot find the engineer in the engineer table', 1;
 											END;
 										ELSE IF (TRY_CAST(@prepared_by AS INT) IS NOT NULL)
 											BEGIN
-												IF (SELECT id_engineer FROM #tempo_engineer_table WHERE id_engineer = @prepared_by) IS NOT NULL
+												IF (SELECT id_engineer FROM #temp_engineer_table_report WHERE id_engineer = @prepared_by) IS NOT NULL
 													BEGIN
 														INSERT INTO report.report_preparation_table(id_report, id_engineer)
 																									VALUES ((SELECT TOP 1 id_report FROM report.report_table ORDER BY id_report DESC),
-																											(SELECT id_engineer FROM #tempo_engineer_table WHERE id_engineer = CAST(@prepared_by AS INT)));
+																											(SELECT id_engineer FROM #temp_engineer_table_report WHERE id_engineer = CAST(@prepared_by AS INT)));
 													END;
 												ELSE
 													THROW 51000, 'Cannot find the engineer in the engineer table', 1;
@@ -880,7 +882,7 @@ AS
 													SET @amount_capacity = CAST(@value_installed_capacity AS FLOAT(2));
 												ELSE IF (TRY_CAST(@value_installed_capacity AS VARCHAR) IS NOT NULL)
 													BEGIN
-														SET @id_capacity_type_to_save = ISNULL((SELECT id_capacity_type FROM #tempo_capacity_type_table WHERE capacity_type_name = @value_installed_capacity),
+														SET @id_capacity_type_to_save = ISNULL((SELECT id_capacity_type FROM #temp_capacity_type_table_report WHERE capacity_type_name = @value_installed_capacity),
 																						NULL);
 														IF (@id_capacity_type_to_save IS NULL)
 															PRINT (CONCAT('Cannot find the installed capacity type "', @value_installed_capacity, '"'));
@@ -906,14 +908,14 @@ AS
 									SET @hydrant_protection = report.REMOVE_EXTRA_SPACES(@hydrant_protection);
 									IF (TRY_CAST(@hydrant_protection AS INT) IS NOT NULL)
 										BEGIN
-											SET @id_hydrant_protection = ISNULL((SELECT id_protection FROM #tempo_hydrant_protection_table WHERE id_protection = CAST(@hydrant_protection AS INT)),
+											SET @id_hydrant_protection = ISNULL((SELECT id_protection FROM #temp_hydrant_protection_table_report WHERE id_protection = CAST(@hydrant_protection AS INT)),
 																				NULL);
 											IF (@id_hydrant_protection IS NULL)
 												PRINT(CONCAT('Cannot find the hydrant protection with the name/id "', @hydrant_protection, '"'));
 										END;
 									ELSE IF (TRY_CAST(@hydrant_protection AS INT) IS NULL)
 										BEGIN
-											SET @id_hydrant_protection = ISNULL((SELECT id_protection FROM #tempo_hydrant_protection_table WHERE protection_name = @hydrant_protection),
+											SET @id_hydrant_protection = ISNULL((SELECT id_protection FROM #temp_hydrant_protection_table_report WHERE protection_name = @hydrant_protection),
 																				NULL);
 											IF (@id_hydrant_protection IS NULL)
 												PRINT(CONCAT('Cannot find the hydrant protection with the name/id "', @hydrant_protection, '"'));
@@ -927,14 +929,14 @@ AS
 									SET @hydrant_standpipe_type = report.REMOVE_EXTRA_SPACES(@hydrant_standpipe_type);
 									IF (TRY_CAST(@hydrant_standpipe_type AS INT) IS NOT NULL)
 										BEGIN
-											SET @id_hydrant_standpipe_type = ISNULL((SELECT id_hydrant_standpipe_type FROM #tempo_hydrant_standpipe_type WHERE id_hydrant_standpipe_type = CAST(@hydrant_standpipe_type AS INT)),
+											SET @id_hydrant_standpipe_type = ISNULL((SELECT id_hydrant_standpipe_type FROM #temp_hydrant_standpipe_type_report WHERE id_hydrant_standpipe_type = CAST(@hydrant_standpipe_type AS INT)),
 																					NULL);
 											IF (@id_hydrant_standpipe_type IS NULL)
 												PRINT(CONCAT('Cannot find the hydrant standpipe system type with the name/id "', @hydrant_standpipe_type, '"'));
 										END;
 									ELSE IF (TRY_CAST(@hydrant_standpipe_type AS INT) IS NULL)
 										BEGIN
-											SET @id_hydrant_standpipe_type = ISNULL((SELECT id_hydrant_standpipe_type FROM #tempo_hydrant_standpipe_type WHERE name_hydrant_standpipe_type = @hydrant_standpipe_type),
+											SET @id_hydrant_standpipe_type = ISNULL((SELECT id_hydrant_standpipe_type FROM #temp_hydrant_standpipe_type_report WHERE name_hydrant_standpipe_type = @hydrant_standpipe_type),
 																					NULL);
 											IF (@id_hydrant_standpipe_type IS NULL)
 												PRINT(CONCAT('Cannot find the hydrant standpipe system type with the name/id "', @hydrant_standpipe_type, '"'));
@@ -948,14 +950,14 @@ AS
 									SET @hydrant_standpipe_class = report.REMOVE_EXTRA_SPACES(@hydrant_standpipe_class);
 									IF (TRY_CAST(@hydrant_standpipe_class AS INT) IS NOT NULL)
 										BEGIN
-											SET @id_hydrant_standpipe_class = ISNULL((SELECT id_hydrant_standpipe_class FROM #tempo_hydrant_standpipe_class WHERE id_hydrant_standpipe_class = CAST(@hydrant_standpipe_class AS INT)),
+											SET @id_hydrant_standpipe_class = ISNULL((SELECT id_hydrant_standpipe_class FROM #temp_hydrant_standpipe_class_report WHERE id_hydrant_standpipe_class = CAST(@hydrant_standpipe_class AS INT)),
 																					NULL);
 											IF (@id_hydrant_standpipe_class IS NULL)
 												PRINT(CONCAT('Cannot find the hydrant standpipe system class with the name/id "', @hydrant_standpipe_class, '"'));
 										END;
 									ELSE IF (TRY_CAST(@hydrant_standpipe_class AS INT) IS NULL)
 										BEGIN
-											SET @id_hydrant_standpipe_class = ISNULL((SELECT id_hydrant_standpipe_class FROM #tempo_hydrant_standpipe_class WHERE name_hydrant_standpipe_class = @hydrant_standpipe_class),
+											SET @id_hydrant_standpipe_class = ISNULL((SELECT id_hydrant_standpipe_class FROM #temp_hydrant_standpipe_class_report WHERE name_hydrant_standpipe_class = @hydrant_standpipe_class),
 																					NULL);
 											IF (@id_hydrant_standpipe_class IS NULL)
 												PRINT(CONCAT('Cannot find the hydrant standpipe system class with the name/id "', @hydrant_standpipe_class, '"'));
@@ -978,12 +980,13 @@ AS
 					THROW 51000, 'Cannot insert into the report table because either the plant or the client do not exists in the database.', 1;
 			END;
 
-			DROP TABLE #tempo_client_table;
-			DROP TABLE #tempo_plant_table;
-			DROP TABLE #tempo_engineer_table;
-			DROP TABLE #tempo_hydrant_protection_table;
-			DROP TABLE #tempo_hydrant_standpipe_class;
-			DROP TABLE #tempo_hydrant_standpipe_type;
+			DROP TABLE #temp_client_table_report;
+			DROP TABLE #temp_plant_table_report;
+			DROP TABLE #temp_engineer_table_report;
+			DROP TABLE #temp_hydrant_protection_table_report;
+			DROP TABLE #temp_hydrant_standpipe_class_report;
+			DROP TABLE #temp_hydrant_standpipe_type_report;
+			DROP TABLE #temp_capacity_type_table_report;
 		END TRY
 		BEGIN CATCH
 			PRINT CONCAT('Cannot insert the report due to this error (', ERROR_MESSAGE(), ')');
@@ -1009,66 +1012,86 @@ CREATE OR ALTER PROCEDURE report.proc_insert_perils_and_risk_table
 	@overall_rating AS VARCHAR(20)
 AS
 	BEGIN TRY
-		DECLARE @tran_insert_perils_and_risk AS VARCHAR(45) = 'insert_perils_and_risk';
-		BEGIN TRANSACTION @tran_insert_perils_and_risk
-			IF (@id_report IS NOT NULL AND @plant IS NOT NULL AND (SELECT id_report FROM report.report_table WHERE id_report = @id_report) IS NOT NULL)
+		BEGIN
+			CREATE TABLE #temp_plant_table_pr (
+				id_plant INT,
+				account_name VARCHAR(150),
+				plant_name VARCHAR(150)
+			);
+			CREATE TABLE #temp_report_table_pr (
+				id_report INT
+			);
+
+			CREATE CLUSTERED INDEX idx_temp_plant_table_pr ON #temp_plant_table_pr(id_plant);
+			CREATE NONCLUSTERED INDEX idx_temp_plant_table_acc_name_pr ON #temp_plant_table_pr(account_name);
+			CREATE NONCLUSTERED INDEX idx_temp_plant_table_plant_name_pr ON #temp_plant_table_pr(plant_name);
+
+			CREATE CLUSTERED INDEX idx_temp_report_table ON #temp_report_table_pr(id_report);
+
+			INSERT INTO #temp_plant_table_pr SELECT id_plant, plant_account_name, plant_name FROM report.plant_table;
+			INSERT INTO #temp_report_table_pr SELECT id_report FROM report.report_table;
+		END;
+		BEGIN
+			IF (@id_report IS NOT NULL AND @plant IS NOT NULL AND (SELECT id_report FROM #temp_report_table_pr WHERE id_report = @id_report) IS NOT NULL)
 				BEGIN
 					DECLARE @id_plant AS INT
 					BEGIN
-						IF ((SELECT TRY_CAST(@plant AS INT)) IS NULL)
-							SET @id_plant = ISNULL((SELECT id_plant FROM report.plant_table WHERE plant_name = report.CORRECT_GRAMMAR(@plant, 'name')), null);
+						IF (TRY_CAST(@plant AS VARCHAR) IS NOT NULL)
+							SET @id_plant = ISNULL((SELECT id_plant FROM #temp_plant_table_pr WHERE account_name = report.CORRECT_GRAMMAR(@plant, 'name') OR plant_name = report.CORRECT_GRAMMAR(@plant, 'name')), 
+													null);
 						IF ((SELECT TRY_CAST(@plant AS INT)) IS NOT NULL)
-							SET @id_plant = ISNULL((SELECT id_plant FROM report.plant_table WHERE id_plant = @plant), null);
+							SET @id_plant = ISNULL((SELECT id_plant FROM #temp_plant_table_pr WHERE id_plant = @plant), null);
 					END;
-						IF (@id_plant IS NOT NULL)
-							DECLARE @overall_rating_to_save AS FLOAT(2)
+					IF (@id_plant IS NOT NULL)
+						DECLARE @overall_rating_to_save AS FLOAT(2)
+						IF (@overall_rating IS NULL OR @overall_rating = '0' OR LOWER(@overall_rating) = 'none')
+						BEGIN
+							DECLARE @temp_table AS TABLE
+														(
+															id_val INT IDENTITY(1,1),
+															val FLOAT(2) NOT NULL
+														);
+							INSERT INTO @temp_table (val) 
+													VALUES (report.DETERMINATE_RATE_OF_RISK(@fire_explosion)),
+															(report.DETERMINATE_RATE_OF_RISK(@landslie_subsidence)),
+															(report.DETERMINATE_RATE_OF_RISK(@water_flooding)),
+															(report.DETERMINATE_RATE_OF_RISK(@wind_storm)),
+															(report.DETERMINATE_RATE_OF_RISK(@lighting)),
+															(report.DETERMINATE_RATE_OF_RISK(@earthquake)),
+															(report.DETERMINATE_RATE_OF_RISK(@tsunami)),
+															(report.DETERMINATE_RATE_OF_RISK(@collapse)),
+															(report.DETERMINATE_RATE_OF_RISK(@aircraft)),
+															(report.DETERMINATE_RATE_OF_RISK(@riot)),
+															(report.DETERMINATE_RATE_OF_RISK(@design_failure))
+										DECLARE @more_rep_item AS FLOAT(2);
+										SET @more_rep_item = (SELECT TOP 1 val FROM @temp_table GROUP BY val ORDER BY COUNT(*) DESC);
 
-							IF (@overall_rating IS NULL OR @overall_rating = '0' OR LOWER(@overall_rating) = 'none')
+										IF (@more_rep_item = 0)
+											SET @overall_rating_to_save = 1
+										ELSE
+											SET @overall_rating_to_save = report.DETERMINATE_RATE_OF_RISK(@more_rep_item);
+									END;
+								ELSE
+									SET @overall_rating_to_save = @overall_rating;
 								BEGIN
-									DECLARE @temp_table AS TABLE
-																(
-																id_val INT IDENTITY(1,1),
-																val FLOAT(2) NOT NULL
-																);
-									INSERT INTO @temp_table (val) 
-															VALUES (report.DETERMINATE_RATE_OF_RISK(@fire_explosion)),
-																	(report.DETERMINATE_RATE_OF_RISK(@landslie_subsidence)),
-																	(report.DETERMINATE_RATE_OF_RISK(@water_flooding)),
-																	(report.DETERMINATE_RATE_OF_RISK(@wind_storm)),
-																	(report.DETERMINATE_RATE_OF_RISK(@lighting)),
-																	(report.DETERMINATE_RATE_OF_RISK(@earthquake)),
-																	(report.DETERMINATE_RATE_OF_RISK(@tsunami)),
-																	(report.DETERMINATE_RATE_OF_RISK(@collapse)),
-																	(report.DETERMINATE_RATE_OF_RISK(@aircraft)),
-																	(report.DETERMINATE_RATE_OF_RISK(@riot)),
-																	(report.DETERMINATE_RATE_OF_RISK(@design_failure))
-									DECLARE @more_rep_item AS FLOAT(2);
-									SET @more_rep_item = (SELECT TOP 1 val FROM @temp_table GROUP BY val ORDER BY COUNT(*) DESC);
-
-									IF (@more_rep_item = 0)
-										SET @overall_rating_to_save = 1
-									ELSE
-										SET @overall_rating_to_save = report.DETERMINATE_RATE_OF_RISK(@more_rep_item);
+									INSERT INTO report.perils_and_risk_table(id_report, id_plant, perils_and_risk_fire_explosion, perils_and_risk_landslide_subsidence, perils_and_risk_water_flooding, perils_and_risk_wind_storm, perils_and_risk_lighting,
+																			perils_and_risk_earthquake, perils_and_risk_tsunami, perils_and_risk_collapse, perils_and_risk_aircraft, perils_and_risk_riot, perils_and_risk_design_failure, perils_and_risk_overall_rating)
+																			VALUES (@id_report, @plant, report.DETERMINATE_RATE_OF_RISK(@fire_explosion), report.DETERMINATE_RATE_OF_RISK(@landslie_subsidence), report.DETERMINATE_RATE_OF_RISK(@water_flooding),
+																					report.DETERMINATE_RATE_OF_RISK(@wind_storm), report.DETERMINATE_RATE_OF_RISK(@lighting), report.DETERMINATE_RATE_OF_RISK(@earthquake), report.DETERMINATE_RATE_OF_RISK(@tsunami),
+																					report.DETERMINATE_RATE_OF_RISK(@collapse), report.DETERMINATE_RATE_OF_RISK(@aircraft), report.DETERMINATE_RATE_OF_RISK(@riot), report.DETERMINATE_RATE_OF_RISK(@design_failure),
+																					report.DETERMINATE_RATE_OF_RISK(@overall_rating_to_save));
+									PRINT CONCAT('Perils and risk for the ID report: (', @id_report,') and plant with the ID: (', @id_plant,') correctly saved');
 								END;
-							ELSE
-								SET @overall_rating_to_save = @overall_rating;
-							BEGIN
-								INSERT INTO report.perils_and_risk_table(id_report, id_plant, perils_and_risk_fire_explosion, perils_and_risk_landslide_subsidence, perils_and_risk_water_flooding, perils_and_risk_wind_storm, perils_and_risk_lighting,
-																		perils_and_risk_earthquake, perils_and_risk_tsunami, perils_and_risk_collapse, perils_and_risk_aircraft, perils_and_risk_riot, perils_and_risk_design_failure, perils_and_risk_overall_rating)
-																		VALUES (@id_report, @plant, report.DETERMINATE_RATE_OF_RISK(@fire_explosion), report.DETERMINATE_RATE_OF_RISK(@landslie_subsidence), report.DETERMINATE_RATE_OF_RISK(@water_flooding),
-																				report.DETERMINATE_RATE_OF_RISK(@wind_storm), report.DETERMINATE_RATE_OF_RISK(@lighting), report.DETERMINATE_RATE_OF_RISK(@earthquake), report.DETERMINATE_RATE_OF_RISK(@tsunami),
-																				report.DETERMINATE_RATE_OF_RISK(@collapse), report.DETERMINATE_RATE_OF_RISK(@aircraft), report.DETERMINATE_RATE_OF_RISK(@riot), report.DETERMINATE_RATE_OF_RISK(@design_failure),
-																				report.DETERMINATE_RATE_OF_RISK(@overall_rating_to_save));
-								PRINT CONCAT('Perils and risk for the ID report: (', @id_report,') and plant with the ID: (', @id_plant,') correctly saved');
-								COMMIT TRANSACTION @tran_insert_perils_and_risk;
-							END;
-				END;
-			ELSE
-				PRINT ('Cannot insert in the perils and risk table because either the report or the plant cannot be found in the database');
+					END;
+				ELSE
+					PRINT ('Cannot insert in the perils and risk table because either the report or the plant cannot be found in the database');
+			END;
+
+		DROP TABLE #temp_plant_table_pr;
+		DROP TABLE #temp_report_table_pr;
 	END TRY
 	BEGIN CATCH
 		PRINT CONCAT('Cannot insert into the perils and risk table due to this error: ("', ERROR_MESSAGE(), '")');
-		ROLLBACK TRANSACTION @tran_insert_perils_and_risk;
 	END CATCH;
 --
 
@@ -1092,80 +1115,110 @@ CREATE OR ALTER PROCEDURE report.proc_insert_loss_scenario_table
 	@mfl AS FLOAT(2)
 AS
 	BEGIN TRY
-		DECLARE @tran_insert_loss_scenario AS VARCHAR(45) = 'insert_loss_scenario';
-		BEGIN TRANSACTION @tran_insert_loss_scenario
-		IF (@client IS NOT NULL AND @plant IS NOT NULL)
-			BEGIN
-				DECLARE 
-					@id_client AS INT,
-					@id_plant AS INT
+		BEGIN
+			CREATE TABLE #temp_plant_table_loss (
+				id_plant INT,
+				account_name VARCHAR(150),
+				plant_name VARCHAR(150)
+			);
+			CREATE TABLE #temp_client_table_loss (
+				id_client INT,
+				client_name VARCHAR(150)
+			);
+			CREATE TABLE #temp_report_table_loss (
+				id_report INT
+			);
+
+			CREATE CLUSTERED INDEX idx_temp_plant_table_loss ON #temp_plant_table_loss(id_plant);
+			CREATE NONCLUSTERED INDEX idx_temp_plant_table_loss_acc_name ON #temp_plant_table_loss(account_name);
+			CREATE NONCLUSTERED INDEX idx_temp_plant_table_loss_plant_name ON #temp_plant_table_loss(plant_name);
+
+			CREATE CLUSTERED INDEX idx_temp_client_table_loss ON #temp_client_table_loss(id_client);
+			CREATE NONCLUSTERED INDEX idx_temp_client_table_loss_name ON #temp_client_table_loss(client_name);
+
+			CREATE CLUSTERED INDEX idx_temp_report_table_loss ON #temp_report_table_loss(id_report);
+
+			INSERT INTO #temp_plant_table_loss SELECT id_plant, plant_account_name, plant_name FROM report.plant_table;
+			INSERT INTO #temp_report_table_loss SELECT id_report FROM report.report_table;
+			INSERT INTO #temp_client_table_loss SELECT id_client, client_name FROM report.client_table;
+		END;
+
+		BEGIN
+			IF (@client IS NOT NULL AND @plant IS NOT NULL)
+				BEGIN
+					DECLARE 
+						@id_client AS INT,
+						@id_plant AS INT
 				
-				SET @plant = report.REMOVE_EXTRA_SPACES(@plant);
-				SET @client = report.REMOVE_EXTRA_SPACES(@client);
+					SET @plant = report.REMOVE_EXTRA_SPACES(@plant);
+					SET @client = report.REMOVE_EXTRA_SPACES(@client);
 
-				BEGIN
-					IF ((SELECT TRY_CAST(@client AS INT)) IS NOT NULL)
-						SET @id_client = ISNULL((SELECT id_client FROM report.client_table WHERE id_client = CAST(@client AS INT)), null);
-					ELSE IF ((SELECT TRY_CAST(@client AS INT)) IS NULL)
-						SET @id_client = ISNULL((SELECT id_client FROM report.client_table WHERE client_name = report.CORRECT_GRAMMAR(@client, 'name')), null);
-				END;
-				BEGIN
-					IF ((SELECT TRY_CAST(@plant AS INT)) IS NOT NULL)
-						SET @id_plant = ISNULL((SELECT id_plant FROM report.plant_table WHERE id_plant = CAST(@plant AS INT)), null);
-					ELSE IF ((SELECT TRY_CAST(@plant AS INT)) IS NULL)
-						SET @id_plant = ISNULL((SELECT id_plant FROM report.plant_table WHERE plant_name = report.CORRECT_GRAMMAR(@plant, 'name')), null);
-				END;
-
-				IF (@id_client IS NOT NULL AND @id_plant IS NOT NULL)
 					BEGIN
-						DECLARE
-							@material_damage_amount_to_save AS DECIMAL(19, 2),
-							@material_damage_percentage_to_save AS FLOAT(2),
-							@business_interruption_amount_to_save AS DECIMAL(19, 2),
-							@business_interruption_percentage_to_save AS FLOAT(2),
-							@buildings_amount_to_save AS DECIMAL(19, 2),
-							@machinary_equipment_to_save AS DECIMAL(19, 2),
-							@electronic_equipment_to_save AS DECIMAL(19, 2),
-							@expansions_investment_works_amount_to_save AS DECIMAL(19, 2),
-							@stock_amount_to_save AS DECIMAL(19, 2),
-							@total_insured_values_to_save AS DECIMAL(19, 2),
-							@pml_percentage_to_save AS FLOAT(2),
-							@mfl_to_save AS FLOAT(2);
-
-						SET @material_damage_amount_to_save = ISNULL(@material_damage_amount, 0);
-						SET @material_damage_percentage_to_save = ISNULL(@material_damage_percentage, 0);
-						SET @business_interruption_amount_to_save = ISNULL(@business_interruption_amount, 0);
-						SET @business_interruption_percentage_to_save = ISNULL(@business_interruption_percentage, 0);
-						SET @buildings_amount_to_save = ISNULL(@buildings_amount, 0);
-						SET @machinary_equipment_to_save  = ISNULL(@machinary_equipment, 0);
-						SET @electronic_equipment_to_save = ISNULL(@electronic_equipment, 0);
-						SET @expansions_investment_works_amount_to_save = ISNULL(@expansions_investment_works_amount, 0);
-						SET @stock_amount_to_save = ISNULL(@stock_amount, 0);
-						SET @total_insured_values_to_save = ISNULL(@total_insured_values, 0);
-						SET @pml_percentage_to_save = ISNULL(@pml_percentage, 0);
-						SET @mfl_to_save = ISNULL(@mfl, 0);
-
-						IF (@material_damage_amount_to_save = 0)
-							SET @material_damage_amount_to_save = @buildings_amount_to_save + @machinary_equipment_to_save + @electronic_equipment_to_save + @expansions_investment_works_amount_to_save + @stock_amount_to_save
-						IF (@total_insured_values_to_save = 0)
-							SET @total_insured_values_to_save = @material_damage_amount_to_save + @business_interruption_amount_to_save;
-
-						BEGIN
-							INSERT INTO report.loss_scenario_table(id_report, id_client, id_plant, loss_scenario_material_damage_amount, loss_scenario_material_damage_percentage, loss_scenario_business_interruption_amount,
-																	loss_scenario_business_interruption_percentage, loss_scenario_buildings_amount, loss_scenario_machinery_equipment_amount, loss_scenario_electronic_equipment_amount,
-																	loss_scenario_expansions_investment_works_amount, loss_scenario_stock_amount, loss_scenario_total_insured_values, loss_scenario_pml_percentage,
-																	loss_scenario_mfl)
-																	VALUES (@id_report, @id_client, @id_plant, @material_damage_amount_to_save, @material_damage_percentage_to_save, @business_interruption_amount_to_save, @business_interruption_percentage_to_save,
-																			@buildings_amount_to_save, @machinary_equipment_to_save, @electronic_equipment_to_save, @expansions_investment_works_amount_to_save, @stock_amount_to_save,
-																			@total_insured_values_to_save, @pml_percentage_to_save, @mfl_to_save);
-							PRINT CONCAT('The loss scenarios for the report with the ID: "', @id_report, '" was correctly saved in the database.');
-							COMMIT TRANSACTION @tran_insert_loss_scenario;
-						END;
+						IF ((SELECT TRY_CAST(@client AS INT)) IS NOT NULL)
+							SET @id_client = ISNULL((SELECT id_client FROM report.client_table WHERE id_client = CAST(@client AS INT)), null);
+						ELSE IF ((SELECT TRY_CAST(@client AS INT)) IS NULL)
+							SET @id_client = ISNULL((SELECT id_client FROM report.client_table WHERE client_name = report.CORRECT_GRAMMAR(@client, 'name')), null);
 					END;
-			END;
+					BEGIN
+						IF ((SELECT TRY_CAST(@plant AS INT)) IS NOT NULL)
+							SET @id_plant = ISNULL((SELECT id_plant FROM report.plant_table WHERE id_plant = CAST(@plant AS INT)), null);
+						ELSE IF ((SELECT TRY_CAST(@plant AS INT)) IS NULL)
+							SET @id_plant = ISNULL((SELECT id_plant FROM report.plant_table WHERE plant_name = report.CORRECT_GRAMMAR(@plant, 'name')), null);
+					END;
+
+					IF (@id_client IS NOT NULL AND @id_plant IS NOT NULL)
+						BEGIN
+							DECLARE
+								@material_damage_amount_to_save AS DECIMAL(19, 2),
+								@material_damage_percentage_to_save AS FLOAT(2),
+								@business_interruption_amount_to_save AS DECIMAL(19, 2),
+								@business_interruption_percentage_to_save AS FLOAT(2),
+								@buildings_amount_to_save AS DECIMAL(19, 2),
+								@machinary_equipment_to_save AS DECIMAL(19, 2),
+								@electronic_equipment_to_save AS DECIMAL(19, 2),
+								@expansions_investment_works_amount_to_save AS DECIMAL(19, 2),
+								@stock_amount_to_save AS DECIMAL(19, 2),
+								@total_insured_values_to_save AS DECIMAL(19, 2),
+								@pml_percentage_to_save AS FLOAT(2),
+								@mfl_to_save AS FLOAT(2);
+
+							SET @material_damage_amount_to_save = ISNULL(@material_damage_amount, 0);
+							SET @material_damage_percentage_to_save = ISNULL(@material_damage_percentage, 0);
+							SET @business_interruption_amount_to_save = ISNULL(@business_interruption_amount, 0);
+							SET @business_interruption_percentage_to_save = ISNULL(@business_interruption_percentage, 0);
+							SET @buildings_amount_to_save = ISNULL(@buildings_amount, 0);
+							SET @machinary_equipment_to_save  = ISNULL(@machinary_equipment, 0);
+							SET @electronic_equipment_to_save = ISNULL(@electronic_equipment, 0);
+							SET @expansions_investment_works_amount_to_save = ISNULL(@expansions_investment_works_amount, 0);
+							SET @stock_amount_to_save = ISNULL(@stock_amount, 0);
+							SET @total_insured_values_to_save = ISNULL(@total_insured_values, 0);
+							SET @pml_percentage_to_save = ISNULL(@pml_percentage, 0);
+							SET @mfl_to_save = ISNULL(@mfl, 0);
+
+							IF (@material_damage_amount_to_save = 0)
+								SET @material_damage_amount_to_save = @buildings_amount_to_save + @machinary_equipment_to_save + @electronic_equipment_to_save + @expansions_investment_works_amount_to_save + @stock_amount_to_save
+							IF (@total_insured_values_to_save = 0)
+								SET @total_insured_values_to_save = @material_damage_amount_to_save + @business_interruption_amount_to_save;
+
+							BEGIN
+								INSERT INTO report.loss_scenario_table(id_report, id_client, id_plant, loss_scenario_material_damage_amount, loss_scenario_material_damage_percentage, loss_scenario_business_interruption_amount,
+																		loss_scenario_business_interruption_percentage, loss_scenario_buildings_amount, loss_scenario_machinery_equipment_amount, loss_scenario_electronic_equipment_amount,
+																		loss_scenario_expansions_investment_works_amount, loss_scenario_stock_amount, loss_scenario_total_insured_values, loss_scenario_pml_percentage,
+																		loss_scenario_mfl)
+																		VALUES (@id_report, @id_client, @id_plant, @material_damage_amount_to_save, @material_damage_percentage_to_save, @business_interruption_amount_to_save, @business_interruption_percentage_to_save,
+																				@buildings_amount_to_save, @machinary_equipment_to_save, @electronic_equipment_to_save, @expansions_investment_works_amount_to_save, @stock_amount_to_save,
+																				@total_insured_values_to_save, @pml_percentage_to_save, @mfl_to_save);
+								PRINT CONCAT('The loss scenarios for the report with the ID: "', @id_report, '" was correctly saved in the database.');
+							END;
+						END;
+				END;
+		END;
+
+		DROP TABLE #temp_client_table_loss;
+		DROP TABLE #temp_plant_table_loss;
+		DROP TABLE #temp_report_table_loss;
 	END TRY
 	BEGIN CATCH
 		PRINT CONCAT('Cannot insert into the loss scenario table due to this error: ("', ERROR_MESSAGE(), '")');
-		ROLLBACK TRANSACTION @tran_insert_loss_scenario;
 	END CATCH;
 --

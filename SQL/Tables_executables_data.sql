@@ -152,7 +152,7 @@ EXEC report.proc_insert_report '1/november/2019', '1000', 'TATA - Accesorios Glo
 -- The id of the report, the id or name of the plant, fire/explosion risk rate, landslide/subsidence risk rate, water flooding risk rate, wind/storm risk rate, lighting risk rate, earthquake risk rate, tsunami risk rate,
 -- collapse risk rate, aircraft risk rate, riot risk rate, design failure risk rate and a overall risk rate, if you leave the overall risk field empty, the database will automatically calculate the overall risk.
 
-EXEC report.proc_insert_perils_and_risk_table 1005, '1029', '2.5', 'light', 'light', '2', 'severe', null, 'none', '0', 'light', '1', 'LIGHT ', null;
+EXEC report.proc_insert_perils_and_risk_table 1001, '1001', '2.5', 'light', 'light', '2', 'severe', null, 'none', '0', 'light', '1', 'LIGHT ', null;
 
 -- Loss scenario executables for data insertion
 -- Data is being inserted in the following order:
@@ -163,4 +163,4 @@ EXEC report.proc_insert_perils_and_risk_table 1005, '1029', '2.5', 'light', 'lig
 --
 -- You can leave the material damage and the total insured values in blank if you want, just be aware of giving all the values to the command so the database can calculate those values for you.
 
-EXEC report.proc_insert_loss_scenario_table 1005, 1000, 1029, 15963716.63, 85, 9129876, 75, 2343287.10, 3620429.53, null, null, 0, 25093592.63, 82, null;
+EXEC report.proc_insert_loss_scenario_table 1001, 'Unity Promotores, S.A.', 1001, 15963716.63, 85, 9129876, 75, 2343287.10, 3620429.53, null, null, 0, 25093592.63, 82, null;
