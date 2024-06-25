@@ -893,34 +893,47 @@ AS
 
 							IF (@installed_capacity IS NOT NULL)
 								BEGIN
+									SET @installed_capacity = report.REMOVE_EXTRA_SPACES(@installed_capacity);
 									IF (@installed_capacity LIKE '%,%')
-										SET @installed_capacity = report.REMOVE_EXTRA_SPACES(@installed_capacity);
-
-										DECLARE @value_installed_capacity AS VARCHAR(50)
-										DECLARE cur_installed_capacity CURSOR DYNAMIC FORWARD_ONLY
-																		FOR SELECT * FROM STRING_SPLIT(@installed_capacity, ',');
-										OPEN cur_installed_capacity;
-										FETCH NEXT FROM cur_installed_capacity INTO @value_installed_capacity;
-										WHILE @@FETCH_STATUS = 0
-											BEGIN TRY
-												IF (TRY_CAST(@value_installed_capacity AS FLOAT) IS NOT NULL)
-													SET @amount_capacity = CAST(@value_installed_capacity AS FLOAT(2));
-												ELSE IF (TRY_CAST(@value_installed_capacity AS VARCHAR) IS NOT NULL)
-													BEGIN
-														SET @id_capacity_type_to_save = ISNULL((SELECT id_capacity_type FROM #temp_capacity_type_table_report WHERE capacity_type_name = @value_installed_capacity),
-																						NULL);
-														IF (@id_capacity_type_to_save IS NULL)
-															PRINT (CONCAT('Cannot find the installed capacity type "', @value_installed_capacity, '"'));
-													END;
-												FETCH NEXT FROM cur_installed_capacity INTO @value_installed_capacity;
-											END TRY
-											BEGIN CATCH
-												PRINT (CONCAT('Cannot save the installed capacity "', ERROR_MESSAGE(), '"'))
-												CLOSE cur_installed_capacity;
-												DEALLOCATE cur_installed_capacity;
-											END CATCH;
-										CLOSE cur_installed_capacity;
-										DEALLOCATE cur_installed_capacity;
+										BEGIN
+											DECLARE @value_installed_capacity AS VARCHAR(50)
+											DECLARE cur_installed_capacity CURSOR DYNAMIC FORWARD_ONLY
+																			FOR SELECT * FROM STRING_SPLIT(@installed_capacity, ',');
+											OPEN cur_installed_capacity;
+											FETCH NEXT FROM cur_installed_capacity INTO @value_installed_capacity;
+											WHILE @@FETCH_STATUS = 0
+												BEGIN TRY
+													IF (TRY_CAST(@value_installed_capacity AS FLOAT) IS NOT NULL)
+														SET @amount_capacity = CAST(@value_installed_capacity AS FLOAT(2));
+													ELSE IF (TRY_CAST(@value_installed_capacity AS VARCHAR) IS NOT NULL)
+														BEGIN
+															SET @id_capacity_type_to_save = ISNULL((SELECT id_capacity_type FROM #temp_capacity_type_table_report WHERE capacity_type_name = @value_installed_capacity),
+																							NULL);
+															IF (@id_capacity_type_to_save IS NULL)
+																PRINT (CONCAT('Cannot find the installed capacity type "', @value_installed_capacity, '"'));
+														END;
+													FETCH NEXT FROM cur_installed_capacity INTO @value_installed_capacity;
+												END TRY
+												BEGIN CATCH
+													PRINT (CONCAT('Cannot save the installed capacity "', ERROR_MESSAGE(), '"'))
+													CLOSE cur_installed_capacity;
+													DEALLOCATE cur_installed_capacity;
+												END CATCH;
+											CLOSE cur_installed_capacity;
+											DEALLOCATE cur_installed_capacity;
+										END;
+									ELSE IF (@installed_capacity NOT LIKE '%,%')
+										BEGIN
+											IF (TRY_CAST(@installed_capacity AS FLOAT) IS NOT NULL)
+												SET @amount_capacity = CAST(@installed_capacity AS FLOAT(2));
+											ELSE IF (TRY_CAST(@installed_capacity AS VARCHAR) IS NOT NULL)
+												BEGIN
+													SET @id_capacity_type_to_save = ISNULL((SELECT id_capacity_type FROM #temp_capacity_type_table_report WHERE capacity_type_name = @installed_capacity),
+																							NULL);
+													IF (@id_capacity_type_to_save IS NULL)
+														PRINT (CONCAT('Cannot find the installed capacity type "', @installed_capacity, '"'));
+												END;
+										END;
 								END;
 							ELSE IF (@installed_capacity IS NULL)
 								BEGIN
