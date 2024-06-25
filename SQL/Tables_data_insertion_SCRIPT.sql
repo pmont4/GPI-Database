@@ -1206,9 +1206,6 @@ AS
 									SET @id_plant = ISNULL((SELECT id_plant FROM #temp_plant_table_loss WHERE plant_name = @plant), null);
 							END;
 
-							PRINT CONCAT(@id_plant, ' planta');
-							PRINT CONCAT(@id_client, ' cliente');
-
 							IF (@id_client IS NOT NULL AND @id_plant IS NOT NULL)
 								BEGIN
 									DECLARE
