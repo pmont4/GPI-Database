@@ -144,8 +144,6 @@ AS
 		RETURN @to_return;
 	END;
 
-SELECT report.CONSTRUCT_DATE('1/november/2019');
-
 CREATE OR ALTER FUNCTION report.DETERMINATE_RATE_OF_RISK(@rate AS VARCHAR(20))
 RETURNS FLOAT
 AS
@@ -206,6 +204,33 @@ AS
 						SET @to_return = 0;
 			END;
 		RETURN @to_return;
+	END;
+
+CREATE OR ALTER FUNCTION report.CONVERT_COORDS(@value VARCHAR(20), @coord_type VARCHAR(15))
+RETURNS VARCHAR(10)
+AS
+	BEGIN
+		IF (@value LIKE '%°%' AND @value LIKE '%m%' AND @value LIKE '%s%')
+			BEGIN
+				SET @value = report.REMOVE_EXTRA_SPACES(@value);
+				DECLARE
+					@grades AS FLOAT(12) = CAST(SUBSTRING(@value, 1, CHARINDEX('°', @value) - 1) AS FLOAT(10)),
+					@minutes AS FLOAT(12) = CAST(TRIM('m' FROM SUBSTRING(@value, CHARINDEX('°', @value) + 1, CHARINDEX('m', @value) - 4)) AS FLOAT(10)),
+					@seconds AS FLOAT(12) = CAST(TRIM('s' FROM SUBSTRING(@value, CHARINDEX('m', @value) + 1, CHARINDEX('s', @value))) AS FLOAT(10));
+				DECLARE
+					@result_1 AS FLOAT(12) = ((@seconds / 12) + @minutes);
+				DECLARE
+					@result_2 AS FLOAT(12) = @result_1 / 60;
+				DECLARE
+					@result_3 AS FLOAT(12) = @result_2 + @grades
+
+				IF (LOWER(@coord_type) = 'longitude')
+					SET @result_3 = @result_3 * -1;
+				RETURN @result_3;
+			END;
+		ELSE
+			RETURN @value;
+		RETURN 0.0000
 	END;
 -- ------------------------------------
 
@@ -555,7 +580,7 @@ AS
 															plant_construction_year, plant_operation_startup_year, plant_address, plant_latitude, plant_longitude, 
 															plant_meters_above_sea_level, plant_certifications, plant_business_specific_turnover, plant_merchandise_class)
 															VALUES (@account_name, @name, @continent, report.CORRECT_GRAMMAR(@country, 'name'), report.CORRECT_GRAMMAR(@state, 'name'), @date_construction_year, @date_operation_startup,
-																	@address, @latitude, @longitude, @meters_above_sea_level, @certifications, @specific_turnover, @id_merchandise);
+																	@address, report.CONVERT_COORDS(@latitude, 'latitude'), report.CONVERT_COORDS(@longitude, 'longitude'), @meters_above_sea_level, @certifications, @specific_turnover, @id_merchandise);
 							BEGIN
 								IF (@type_location IS NOT NULL)
 									IF (@type_location LIKE '%,%')
