@@ -146,7 +146,6 @@ AS
 						plant_latitude VARCHAR(50) NULL,
 						plant_longitude VARCHAR(50) NULL,
 						plant_meters_above_sea_level INT NULL,
-						plant_certifications VARCHAR(150) NULL,
 						plant_business_specific_turnover VARCHAR(15) NOT NULL,
 						plant_merchandise_class INT NULL,
 						CONSTRAINT pk_plant_table
@@ -255,6 +254,7 @@ AS
 						id_plant_parameters INT IDENTITY(1000, 1),
 						id_report INT NOT NULL,
 						id_plant INT NOT NULL,
+						plant_certifications VARCHAR(200) NULL,
 						plant_parameters_installed_capacity FLOAT NULL,
 						id_capacity_type INT NULL,
 						plant_parameters_built_up FLOAT NULL,
