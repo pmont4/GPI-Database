@@ -156,3 +156,12 @@ AS
 	lst.loss_scenario_total_insured_values, lst.loss_scenario_pml_percentage, lst.loss_scenario_mfl;
 
 SELECT rv.* FROM report.report_view rv;
+
+SELECT
+	p.id_plant AS 'ID Plant',
+	p.plant_name AS 'Plant name',
+	COUNT(r.id_plant) AS 'Amount of reports made for this plant'
+FROM report.plant_table p
+	LEFT JOIN report.report_table r ON p.id_plant = r.id_plant
+GROUP BY p.id_plant, r.id_plant, p.plant_name
+ORDER BY COUNT(r.id_plant) ASC;
