@@ -697,6 +697,8 @@ AFTER INSERT AS
 	DEALLOCATE cur;
 --
 
+SELECT pv.* FROM report.plant_view pv;
+
 -- Report table data scripts
 --
 CREATE OR ALTER PROCEDURE report.proc_insert_report_table
