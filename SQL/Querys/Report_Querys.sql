@@ -158,10 +158,54 @@ AS
 SELECT rv.* FROM report.report_view rv;
 
 SELECT
+	DATEDIFF(DAY, DATEFROMPARTS(2019, 1, 18), GETDATE());
+
+CREATE OR ALTER FUNCTION report.MOST_RECENT_REPORT(@plant VARCHAR(150))
+RETURNS INT
+AS
+	BEGIN
+		DECLARE @id_plant AS INT
+
+		IF (TRY_CAST(@plant AS INT) IS NOT NULL)
+			SET @id_plant = ISNULL((SELECT id_plant FROM report.plant_table WHERE id_plant = @plant), NULL);
+		ELSE IF (TRY_CAST(@plant AS VARCHAR) IS NOT NULL)
+			SET @id_plant = ISNULL((SELECT id_plant FROM report.plant_table WHERE plant_name = @plant OR plant_account_name = @plant), NULL);
+
+		BEGIN
+			IF (@id_plant IS NOT NULL)
+				BEGIN
+					DECLARE 
+						@date_to_evaluate AS DATE,
+						@less_days_count AS INT = 0,
+						@to_return AS INT;
+					DECLARE cur_date CURSOR DYNAMIC FORWARD_ONLY
+										FOR SELECT CAST(report_date AS DATE) FROM report.report_table WHERE id_plant = @id_plant;
+					OPEN cur_date;
+					FETCH NEXT FROM cur_date INTO @date_to_evaluate;
+					WHILE @@FETCH_STATUS = 0
+						BEGIN
+							IF (@less_days_count = 0)
+								SET @less_days_count = DATEDIFF(DAY, @date_to_evaluate, GETDATE());
+							IF ((DATEDIFF(DAY, @date_to_evaluate, GETDATE())) <= @less_days_count)
+								SET @to_return = (SELECT id_report FROM report.report_table WHERE report_date = @date_to_evaluate);
+							FETCH NEXT FROM cur_date INTO @date_to_evaluate
+						END;
+					CLOSE cur_date;
+					DEALLOCATE cur_date;
+
+					RETURN @to_return;
+				END;
+			RETURN NULL;
+		END;
+	END;
+
+SELECT
 	p.id_plant AS 'ID Plant',
 	p.plant_name AS 'Plant name',
-	COUNT(r.id_plant) AS 'Amount of reports made for this plant'
+	COUNT(p.id_plant) AS 'Amount of reports made for this plant',
+	(SELECT CAST(report_date AS DATE) FROM report.report_table WHERE id_report = report.MOST_RECENT_REPORT(p.id_plant)) AS 'Date of the most recent report made'
 FROM report.plant_table p
 	LEFT JOIN report.report_table r ON p.id_plant = r.id_plant
-GROUP BY p.id_plant, r.id_plant, p.plant_name
+	LEFT JOIN report.client_table c ON c.id_client = r.id_client
+GROUP BY r.id_plant, p.id_plant, p.plant_name
 ORDER BY COUNT(r.id_plant) ASC;
