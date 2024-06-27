@@ -223,17 +223,20 @@ AS
 		RETURN @to_return;
 	END;
 
-SELECT
-	p.id_plant AS 'ID Plant',
-	p.plant_name AS 'Plant name',
-	COUNT(p.id_plant) AS 'Amount of reports made for this plant',
+CREATE OR ALTER VIEW report.report_count
+AS
+	SELECT
+		p.id_plant AS 'ID Plant',
+		p.plant_name AS 'Plant name',
+		COUNT(p.id_plant) AS 'Amount of reports made for this plant',
 
-	CONCAT((SELECT CAST(report_date AS DATE) FROM report.report_table WHERE id_report = report.MOST_RECENT_REPORT(p.id_plant)), ' requested by: ',
-			report.GET_CLIENT_OF_MOST_RECENT_REPORT(p.id_plant)) AS 'Date of the most recent report made',
+		CONCAT((SELECT CAST(report_date AS DATE) FROM report.report_table WHERE id_report = report.MOST_RECENT_REPORT(p.id_plant)), ' requested by: ',
+				report.GET_CLIENT_OF_MOST_RECENT_REPORT(p.id_plant)) AS 'Date of the most recent report made',
 
-	report.GET_ENGINEER_OF_MOST_RECENT_REPORT(p.id_plant) AS 'Most recent report prepared by'
-FROM report.plant_table p
-	LEFT JOIN report.report_table r ON p.id_plant = r.id_plant
-	LEFT JOIN report.client_table c ON c.id_client = r.id_client
-GROUP BY r.id_plant, p.id_plant, p.plant_name
-ORDER BY COUNT(r.id_plant) ASC;
+		report.GET_ENGINEER_OF_MOST_RECENT_REPORT(p.id_plant) AS 'Most recent report prepared by'
+	FROM report.plant_table p
+		LEFT JOIN report.report_table r ON p.id_plant = r.id_plant
+		LEFT JOIN report.client_table c ON c.id_client = r.id_client
+	GROUP BY r.id_plant, p.id_plant, p.plant_name
+
+SELECT rc.* FROM report.report_count rc ORDER BY rc.[Amount of reports made for this plant] ASC;
