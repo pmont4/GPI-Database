@@ -972,7 +972,7 @@ BEGIN TRY
 																END;
 															ELSE IF (TRY_CAST(@hydrant_protection AS INT) IS NULL)
 																BEGIN
-																	SET @id_hydrant_protection_to_save = ISNULL((SELECT id_hydrant_protection FROM #temp_hydrant_protection_table_report WHERE hydrant_protection_name = @hydrant_protection),
+																	SET @id_hydrant_protection_to_save = ISNULL((SELECT id_hydrant_protection FROM #temp_hydrant_protection_table_report WHERE hydrant_protection_name = report.CORRECT_GRAMMAR(@hydrant_protection, 'paragraph')),
 																										NULL);
 																	IF (@id_hydrant_protection_to_save IS NULL)
 																		PRINT(CONCAT('Cannot find the hydrant protection with the name/id "', @hydrant_protection, '"'));
@@ -992,7 +992,7 @@ BEGIN TRY
 																END;
 															ELSE IF (TRY_CAST(@hydrant_standpipe_type AS INT) IS NULL)
 																BEGIN
-																	SET @id_hydrant_standpipe_type_to_save = ISNULL((SELECT id_hydrant_standpipe_type FROM #temp_hydrant_standpipe_type_report WHERE hydrant_standpipe_type_name = @hydrant_standpipe_type), NULL);
+																	SET @id_hydrant_standpipe_type_to_save = ISNULL((SELECT id_hydrant_standpipe_type FROM #temp_hydrant_standpipe_type_report WHERE hydrant_standpipe_type_name = report.CORRECT_GRAMMAR(@hydrant_standpipe_type, 'name')), NULL);
 																	IF (@id_hydrant_standpipe_type_to_save IS NULL)
 																		PRINT(CONCAT('Cannot find the hydrant standpipe system type with the name/id "', @hydrant_standpipe_type, '"'));
 																END;
@@ -1011,7 +1011,7 @@ BEGIN TRY
 																END;
 															ELSE IF (TRY_CAST(@hydrant_standpipe_class AS INT) IS NULL)
 																BEGIN
-																	SET @id_hydrant_standpipe_class_to_save = ISNULL((SELECT id_hydrant_standpipe_class FROM #temp_hydrant_standpipe_class_report WHERE hydrant_standpipe_class_name = @hydrant_standpipe_class), NULL);
+																	SET @id_hydrant_standpipe_class_to_save = ISNULL((SELECT id_hydrant_standpipe_class FROM #temp_hydrant_standpipe_class_report WHERE hydrant_standpipe_class_name = report.CORRECT_GRAMMAR(@hydrant_standpipe_class, 'name')), NULL);
 																	IF (@id_hydrant_standpipe_class_to_save IS NULL)
 																		PRINT(CONCAT('Cannot find the hydrant standpipe system class with the name/id "', @hydrant_standpipe_class, '"'));
 																END;

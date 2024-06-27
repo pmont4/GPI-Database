@@ -15,7 +15,7 @@ AS
 		CONCAT('Latitude: ', CAST(p.plant_latitude AS VARCHAR(20)), ' Longitude: ', CAST(p.plant_longitude AS VARCHAR(20))) AS 'Latitude and longitude',
 		p.plant_meters_above_sea_level AS 'Meters above sea level',
 		p.plant_address AS 'Address',
-		mc.merchandise_classification_type_name AS 'Merchandise classification',
+		IIF(p.plant_merchandise_class IS NOT NULL, mc.merchandise_classification_type_name, 'Has no merchandise classification saved') AS 'Merchandise classification',
 		btc.business_turnover_name AS 'Business turnover',
 		p.plant_business_specific_turnover AS 'Specific business turnover',
 		STRING_AGG(tlc.type_location_class_name, ', ') AS 'Location description'
@@ -26,7 +26,8 @@ AS
 		LEFT JOIN report.type_location_table tl ON p.id_plant = tl.id_plant
 		LEFT JOIN report.type_location_classification_table tlc ON tl.id_type_location_class = tlc.id_type_location_class
 	GROUP BY p.id_plant, p.plant_account_name, p.plant_name, p.plant_country, p.plant_continent, p.plant_country_state, p.plant_construction_year, p.plant_operation_startup_year,
-	p.plant_latitude, p.plant_longitude, p.plant_meters_above_sea_level, p.plant_address, mc.merchandise_classification_type_name, btc.business_turnover_name, p.plant_business_specific_turnover
+	p.plant_latitude, p.plant_longitude, p.plant_meters_above_sea_level, p.plant_address, mc.merchandise_classification_type_name, btc.business_turnover_name, p.plant_business_specific_turnover,
+	p.plant_merchandise_class
 
 SELECT pv.* FROM report.plant_view pv;
 
@@ -214,7 +215,7 @@ CREATE OR ALTER FUNCTION report.GET_ENGINEER_OF_MOST_RECENT_REPORT(@id_plant AS 
 RETURNS VARCHAR(150)
 AS
 	BEGIN
-		DECLARE @to_return AS VARCHAR(150) = (SELECT STRING_AGG(CONCAT(e.engineer_name, IIF(e.engineer_contact IS NOT NULL, CONCAT(' (Contact: ', e.engineer_contact, ')'), '(Engineer has no contact saved)')), ',')
+		DECLARE @to_return AS VARCHAR(150) = (SELECT STRING_AGG(CONCAT(e.engineer_name, IIF(e.engineer_contact IS NOT NULL, CONCAT(' (Contact: ', e.engineer_contact, ')'), ' (Engineer has no contact saved)')), ',')
 												FROM report.report_table r
 													LEFT JOIN report.report_preparation_table rp ON rp.id_report = r.id_report
 													LEFT JOIN report.engineer_table e ON e.id_engineer = rp.id_engineer
