@@ -199,11 +199,23 @@ AS
 		END;
 	END;
 
+CREATE OR ALTER FUNCTION report.GET_CLIENT_OF_MOST_RECENT_REPORT(@id_plant AS INT)
+RETURNS VARCHAR(200)
+AS
+	BEGIN
+		DECLARE @to_return AS VARCHAR(200) = (SELECT c.client_name 
+												FROM report.report_table r
+													LEFT JOIN report.client_table c ON c.id_client = r.id_client
+												WHERE id_report = report.MOST_RECENT_REPORT(@id_plant))
+		RETURN @to_return;
+	END;
+
 SELECT
 	p.id_plant AS 'ID Plant',
 	p.plant_name AS 'Plant name',
 	COUNT(p.id_plant) AS 'Amount of reports made for this plant',
-	(SELECT CAST(report_date AS DATE) FROM report.report_table WHERE id_report = report.MOST_RECENT_REPORT(p.id_plant)) AS 'Date of the most recent report made'
+	CONCAT((SELECT CAST(report_date AS DATE) FROM report.report_table WHERE id_report = report.MOST_RECENT_REPORT(p.id_plant)), ' requested by: ',
+			report.GET_CLIENT_OF_MOST_RECENT_REPORT(p.id_plant)) AS 'Date of the most recent report made'
 FROM report.plant_table p
 	LEFT JOIN report.report_table r ON p.id_plant = r.id_plant
 	LEFT JOIN report.client_table c ON c.id_client = r.id_client
