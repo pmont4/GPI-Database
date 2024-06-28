@@ -18,7 +18,24 @@ EXEC report.proc_insert_engineer 'Eduardo Bracamonte', null;
 --
 -- Name of the company
 
+EXEC report.proc_insert_client 'Unity Promotores, S.A.';
+EXEC report.proc_insert_client 'Reasinter, Intermadiario de Reaseguro, S.A.';
+EXEC report.proc_insert_client 'Tecniseguros, Corredores de Seguros, S.A.';
+EXEC report.proc_insert_client 'Seguros Mapfre - Guatemala';
+EXEC report.proc_insert_client 'Seguros Agromercantil, S.A.';
+EXEC report.proc_insert_client 'Grupo Protegemos Asesores';
+EXEC report.proc_insert_client 'Redbridge | assurance business support.';
+EXEC report.proc_insert_client 'Almacenadora Integrada, S.A.';
+EXEC report.proc_insert_client 'Grupo Cemaco';
+EXEC report.proc_insert_client 'Generali Global Corporate & Commercial';
+EXEC report.proc_insert_client 'Técnicos en Seguros, S.A.';
+EXEC report.proc_insert_client 'Aseguradora Mundial, S.A.';
+EXEC report.proc_insert_client 'Corporación Arcenillas, S.A.';
+EXEC report.proc_insert_client 'Alimentos S.A.';
+EXEC report.proc_insert_client 'Cerveceria Centro Americana S.A.';
+EXEC report.proc_insert_client 'Conseguros, Corredor de Seguros, S.A.';
 EXEC report.proc_insert_client 'Seguros Universales S.A.';
+
 
 -- Capacity type table executables for data insertion
 -- Data is being inserted in the following order
