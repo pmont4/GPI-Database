@@ -101,7 +101,7 @@ AS
 					FETCH NEXT FROM cur_date INTO @value
 					WHILE @@FETCH_STATUS = 0
 						BEGIN
-								IF ((SELECT TRY_CAST(@value AS INT)) IS NOT NULL)
+								IF (TRY_CAST(@value AS INT) IS NOT NULL)
 									BEGIN
 										IF (@day IS NULL)
 											IF (CAST(@value AS INT) >= 1 AND CAST(@value AS INT) <= 31)
@@ -145,8 +145,6 @@ AS
 			SET @to_return = GETDATE();
 		RETURN @to_return;
 	END;
-
-SELECT report.CONSTRUCT_DATE('12/agosto/2023')
 
 CREATE OR ALTER FUNCTION report.DETERMINATE_RATE_OF_RISK(@rate AS VARCHAR(20))
 RETURNS FLOAT
