@@ -160,6 +160,7 @@ EXEC report.proc_insert_perils_and_risk_table 1001, '1001', '2.5', 'light', 'lig
 EXEC report.proc_insert_perils_and_risk_table 1006, '1003', '2.5', 'none', '1', '2.5', '2', 2.5, 'none', '1', '1', '1', 'LIGHT ', 1;
 EXEC report.proc_insert_perils_and_risk_table 1008, 1004, 1, 2, 1, 2, 2, 2.5, 'none', 1, 1, 1, 1, 1;
 EXEC report.proc_insert_perils_and_risk_table 1010, 1005, 1.5, 'none', 2.5, 1, 2, 2, 'none', 1, 3, 2.5, 1, 2;
+EXEC report.proc_insert_perils_and_risk_table 1011, 1009, 'none', 1, 1, 1, 1.5, 2.5, 'none', 1, 'none', 1, 2, 1.5;
 
 -- Loss scenario executables for data insertion
 -- Data is being inserted in the following order:
