@@ -101,36 +101,38 @@ AS
 					FETCH NEXT FROM cur_date INTO @value
 					WHILE @@FETCH_STATUS = 0
 						BEGIN
-							IF (@value != '')
 								IF ((SELECT TRY_CAST(@value AS INT)) IS NOT NULL)
 									BEGIN
-										IF (CAST(@value AS INT) >= 1 AND CAST(@value AS INT) <= 31)
-											SET @day = @value;
-										ELSE
-											SET @day = 1;
+										IF (@day IS NULL)
+											IF (CAST(@value AS INT) >= 1 AND CAST(@value AS INT) <= 31)
+												SET @day = @value;
+											ELSE
+												SET @day = 1;
 										IF (CAST(@value AS INT) >= 2010 AND CAST(@value AS INT) <= 2040)
 											SET @year = @value;
 										ELSE
 											SET @year = 2010
 									END;
-								ELSE IF ((SELECT TRY_CAST(@value AS INT)) IS NULL)
-									BEGIN
-										SET @month = (SELECT CASE
-																WHEN LOWER(@month) = 'january' OR LOWER(@month) = 'enero' THEN 1
-																WHEN LOWER(@month) = 'february' OR LOWER(@month) = 'febrero' THEN 2
-																WHEN LOWER(@month) = 'march' OR LOWER(@month) = 'marzo' THEN 3
-																WHEN LOWER(@month) = 'april' OR LOWER(@month) = 'abril' THEN 4
-																WHEN LOWER(@month) = 'may' OR LOWER(@month) = 'mayo' THEN 5
-																WHEN LOWER(@month) = 'june' OR LOWER(@month) = 'junio' THEN 6
-																WHEN LOWER(@month) = 'july' OR LOWER(@month) = 'julio' THEN 7
-																WHEN LOWER(@month) = 'agost' OR LOWER(@month) = 'agosto' THEN 8
-																WHEN LOWER(@month) = 'september' OR LOWER(@month) = 'septiembre' THEN 9
-																WHEN LOWER(@month) = 'october' OR LOWER(@month) = 'octubre' THEN 10
-																WHEN LOWER(@month) = 'november' OR LOWER(@month) = 'noviembre' THEN 11
-																WHEN LOWER(@month) = 'december' OR LOWER(@month) = 'diciembre' THEN 12
-																ELSE 1
-															END);
-									END;
+								BEGIN
+									IF (TRY_CAST(@value AS INT) IS NULL)
+										BEGIN
+											SET @month = (SELECT CASE
+																	WHEN LOWER(@value) = 'january' OR LOWER(@value) = 'enero' THEN 1
+																	WHEN LOWER(@value) = 'february' OR LOWER(@value) = 'febrero' THEN 2
+																	WHEN LOWER(@value) = 'march' OR LOWER(@value) = 'marzo' THEN 3
+																	WHEN LOWER(@value) = 'april' OR LOWER(@value) = 'abril' THEN 4
+																	WHEN LOWER(@value) = 'may' OR LOWER(@value) = 'mayo' THEN 5
+																	WHEN LOWER(@value) = 'june' OR LOWER(@value) = 'junio' THEN 6
+																	WHEN LOWER(@value) = 'july' OR LOWER(@value) = 'julio' THEN 7
+																	WHEN LOWER(@value) = 'agost' OR LOWER(@value) = 'agosto' THEN 8
+																	WHEN LOWER(@value) = 'september' OR LOWER(@value) = 'septiembre' THEN 9
+																	WHEN LOWER(@value) = 'october' OR LOWER(@value) = 'octubre' THEN 10
+																	WHEN LOWER(@value) = 'november' OR LOWER(@value) = 'noviembre' THEN 11
+																	WHEN LOWER(@value) = 'december' OR LOWER(@value) = 'diciembre' THEN 12
+																	ELSE 1
+																END);
+										END;
+								END;
 							FETCH NEXT FROM cur_date INTO @value
 						END;
 					CLOSE cur_date;
@@ -143,6 +145,8 @@ AS
 			SET @to_return = GETDATE();
 		RETURN @to_return;
 	END;
+
+SELECT report.CONSTRUCT_DATE('12/agosto/2023')
 
 CREATE OR ALTER FUNCTION report.DETERMINATE_RATE_OF_RISK(@rate AS VARCHAR(20))
 RETURNS FLOAT
