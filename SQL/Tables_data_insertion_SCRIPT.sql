@@ -209,31 +209,31 @@ AS
 	END;
 
 CREATE OR ALTER FUNCTION report.CONVERT_COORDS(@value VARCHAR(20), @coord_type VARCHAR(15))
-RETURNS VARCHAR(10)
+RETURNS FLOAT
 AS
 	BEGIN
 		IF (@value LIKE '%°%' AND @value LIKE '%m%' AND @value LIKE '%s%')
 			BEGIN
 				SET @value = report.REMOVE_EXTRA_SPACES(@value);
 				DECLARE
-					@grades AS FLOAT(12) = CAST(SUBSTRING(@value, 1, CHARINDEX('°', @value) - 1) AS FLOAT(10)),
-					@minutes AS FLOAT(12) = CAST(TRIM('m' FROM SUBSTRING(@value, CHARINDEX('°', @value) + 1, CHARINDEX('m', @value) - 4)) AS FLOAT(10)),
-					@seconds AS FLOAT(12) = CAST(TRIM('s' FROM SUBSTRING(@value, CHARINDEX('m', @value) + 1, CHARINDEX('s', @value))) AS FLOAT(10));
-				DECLARE
-					@result_1 AS FLOAT(12) = ((@seconds / 12) + @minutes);
-				DECLARE
-					@result_2 AS FLOAT(12) = @result_1 / 60;
-				DECLARE
-					@result_3 AS FLOAT(12) = @result_2 + @grades
+					@grades AS FLOAT = CAST(SUBSTRING(@value, 1, CHARINDEX('°', @value) - 1) AS FLOAT),
+					@minutes AS FLOAT = CAST(TRIM('m' FROM SUBSTRING(@value, CHARINDEX('°', @value) + 1, CHARINDEX('m', @value) - 4)) AS FLOAT),
+					@seconds AS FLOAT = CAST(TRIM('s' FROM SUBSTRING(@value, CHARINDEX('m', @value) + 1, CHARINDEX('s', @value))) AS FLOAT);
+
+				DECLARE @result AS FLOAT = @grades + (@minutes / 60.0) + (@seconds / 3600.0);
 
 				IF (LOWER(@coord_type) = 'longitude')
-					SET @result_3 = @result_3 * -1;
-				RETURN @result_3;
+					SET @result = @result * -1;
+				RETURN @result;
 			END;
 		ELSE
 			RETURN @value;
 		RETURN 0.0000
 	END;
+
+SELECT report.CONVERT_COORDS('14°40m15.51s', 'latitude')
+SELECT FORMAT(report.CONVERT_COORDS('14°40m15.51s', 'latitude'), 'N6');
+
 -- ------------------------------------
 
 -- Engineer insertion data scripts.
@@ -495,8 +495,8 @@ CREATE OR ALTER PROCEDURE report.proc_insert_plant
 	@merchandise_classification AS VARCHAR(8),
 	@type_location AS VARCHAR(150),
 	@address AS VARCHAR(100),
-	@latitude AS VARCHAR(30),
-	@longitude AS VARCHAR(30),
+	@latitude AS VARCHAR(20),
+	@longitude AS VARCHAR(20),
 	@meters_above_sea_level AS INT
 AS
 	BEGIN TRY
@@ -532,7 +532,9 @@ AS
 		DECLARE
 			@date_construction_year AS DATETIME,
 			@date_operation_startup AS DATETIME,
-			@id_merchandise AS INT
+			@id_merchandise AS INT,
+			@latitude_to_save AS FLOAT = IIF(@latitude IS NOT NULL, CAST(FORMAT(report.CONVERT_COORDS(@latitude, 'latitude'), 'N6') AS FLOAT), NULL),
+			@longitude_to_save AS FLOAT = IIF(@longitude IS NOT NULL, CAST(FORMAT(report.CONVERT_COORDS(@longitude, 'longitude'), 'N6') AS FLOAT), NULL)
 		BEGIN
 			IF (@account_name != '' AND @continent != '' AND @country != '' AND @state != '' AND @business_turnover != '' AND @specific_turnover != '')
 				BEGIN
@@ -581,7 +583,7 @@ AS
 															plant_construction_year, plant_operation_startup_year, plant_address, plant_latitude, plant_longitude, 
 															plant_meters_above_sea_level, plant_business_specific_turnover, plant_merchandise_class)
 															VALUES (@account_name, @name, @continent, report.CORRECT_GRAMMAR(@country, 'name'), report.CORRECT_GRAMMAR(@state, 'name'), @date_construction_year, @date_operation_startup,
-																	@address, report.CONVERT_COORDS(@latitude, 'latitude'), report.CONVERT_COORDS(@longitude, 'longitude'), @meters_above_sea_level, @specific_turnover, @id_merchandise);
+																	@address, @latitude_to_save, @longitude_to_save, @meters_above_sea_level, @specific_turnover, @id_merchandise);
 							BEGIN
 								IF (@type_location IS NOT NULL)
 									IF (@type_location LIKE '%,%')
@@ -660,43 +662,6 @@ AS
 	BEGIN CATCH
 		PRINT CONCAT('Cannot insert the plant  "', report.CORRECT_GRAMMAR(@name, 'name'),'" in the database due to this error: (', ERROR_MESSAGE(), ')');
 	END CATCH;
-
-CREATE OR ALTER TRIGGER trigger_null_verifiying_plant_table
-ON report.plant_table
-AFTER INSERT AS
-	DECLARE
-		@id AS INT = (SELECT id_plant FROM inserted),
-		@plant_address AS VARCHAR(100),
-		@plant_latitude AS VARCHAR(30),
-		@plant_longitude AS VARCHAR(30),
-		@plant_meters_above_sea_level AS INT
-	DECLARE cur CURSOR DYNAMIC FORWARD_ONLY
-				FOR SELECT i.plant_address, i.plant_latitude, i.plant_longitude, i.plant_meters_above_sea_level FROM inserted i;
-	OPEN cur;
-	FETCH NEXT FROM cur INTO @plant_address, @plant_latitude, @plant_longitude, @plant_meters_above_sea_level
-	WHILE @@FETCH_STATUS = 0
-		BEGIN TRY
-			IF (@plant_address IS NULL)
-				SET @plant_address = 'No address';
-			IF (@plant_latitude IS NULL)
-				SET @plant_latitude = 'No latitude';
-			IF (@plant_longitude IS NULL)
-				SET @plant_longitude = 'No longitude';
-			IF (@plant_meters_above_sea_level IS NULL)
-				SET @plant_meters_above_sea_level = 0;
-				UPDATE plant_table SET plant_address = @plant_address, plant_latitude = @plant_latitude, 
-										plant_longitude = @plant_longitude, plant_meters_above_sea_level = @plant_meters_above_sea_level
-										WHERE id_plant = @id;
-										
-			FETCH NEXT FROM cur INTO @plant_address, @plant_latitude, @plant_longitude, @plant_meters_above_sea_level
-		END TRY
-		BEGIN CATCH
-			PRINT CONCAT('An error ocurred while attempting to update the plant table (', ERROR_MESSAGE(), ')');
-			CLOSE cur;
-			DEALLOCATE cur;
-		END CATCH;
-	CLOSE cur;
-	DEALLOCATE cur;
 --
 
 -- Report table data scripts

@@ -10,9 +10,13 @@ AS
 		p.plant_name AS 'Plant name',
 		CONCAT(p.plant_continent, ' - ', p.plant_country, ' - ', p.plant_country_state) AS 'Country and state',
 
-		YEAR(p.plant_construction_year) AS 'Construction year',
-		YEAR(p.plant_operation_startup_year) AS 'Operation startup year',
-		CONCAT('Latitude: ', CAST(p.plant_latitude AS VARCHAR(20)), ' Longitude: ', CAST(p.plant_longitude AS VARCHAR(20))) AS 'Latitude and longitude',
+		IIF(p.plant_construction_year IS NOT NULL, CAST(YEAR(p.plant_construction_year) AS VARCHAR(5)), 'No construction year saved') AS 'Construction year',
+		IIF(p.plant_operation_startup_year IS NOT NULL, CAST(YEAR(p.plant_operation_startup_year) AS VARCHAR(5)), 'No operation startup year saved') AS 'Operation startup year',
+
+		IIF(p.plant_latitude IS NOT NULL AND p.plant_longitude IS NOT NULL, 
+			CONCAT('Latitude: ', IIF(p.plant_latitude IS NOT NULL, FORMAT(p.plant_latitude, 'N6'), 'No latitude saved'), ' Longitude: ', IIF(p.plant_longitude IS NOT NULL, FORMAT(p.plant_longitude, 'N6'), 'No longitude saved')), 
+			'No latitude or longitude saved') AS 'Latitude and longitude',
+
 		p.plant_meters_above_sea_level AS 'Meters above sea level',
 		p.plant_address AS 'Address',
 		IIF(p.plant_merchandise_class IS NOT NULL, mc.merchandise_classification_type_name, 'Has no merchandise classification saved') AS 'Merchandise classification',
@@ -88,7 +92,7 @@ AS
 		p.plant_name AS 'Plant name',
 		pp.plant_certifications AS 'Certifications',
 		CONCAT(pp.plant_parameters_installed_capacity, ' ', ct.capacity_type_name) AS 'Installed capacity',
-		IIF(pp.plant_parameters_built_up IS NOT NULL, ROUND(pp.plant_parameters_built_up, 2), 'No built-up area saved') AS 'Built-up area',
+		IIF(pp.plant_parameters_built_up IS NOT NULL AND pp.plant_parameters_built_up > 0, CAST(FORMAT(ROUND(pp.plant_parameters_built_up, 2), 'N2') AS VARCHAR(20)), 'No built-up area saved') AS 'Built-up area (m2)',
 
 		report.CALCULATE_RISK_FOR_QUERY(pp.plant_parameters_exposures) AS 'Area exposures',
 
