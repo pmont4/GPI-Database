@@ -88,7 +88,7 @@ AS
 		p.plant_name AS 'Plant name',
 		pp.plant_certifications AS 'Certifications',
 		CONCAT(pp.plant_parameters_installed_capacity, ' ', ct.capacity_type_name) AS 'Installed capacity',
-		pp.plant_parameters_built_up AS 'Built-up area',
+		IIF(pp.plant_parameters_built_up IS NOT NULL, ROUND(pp.plant_parameters_built_up, 2), 'No built-up area saved') AS 'Built-up area',
 
 		report.CALCULATE_RISK_FOR_QUERY(pp.plant_parameters_exposures) AS 'Area exposures',
 
@@ -157,9 +157,6 @@ AS
 	lst.loss_scenario_total_insured_values, lst.loss_scenario_pml_percentage, lst.loss_scenario_mfl;
 
 SELECT rv.* FROM report.report_view rv;
-
-SELECT
-	DATEDIFF(DAY, DATEFROMPARTS(2019, 1, 18), GETDATE());
 
 CREATE OR ALTER FUNCTION report.MOST_RECENT_REPORT(@plant VARCHAR(150))
 RETURNS INT

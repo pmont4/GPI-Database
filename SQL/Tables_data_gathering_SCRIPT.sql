@@ -75,7 +75,7 @@ EXEC view_table 'ct';
 -- Perils and risk executable
 EXEC view_table 'pr';
 -- Loss scenario executable
-EXEC view_table 'ls';
+EXEC view_table 'ls';s
 
 -- Columns
 SELECT C.COLUMN_NAME AS 'Nombre de la columna', C.DATA_TYPE AS 'Tipo de la columna' FROM INFORMATION_SCHEMA.COLUMNS C WHERE TABLE_NAME = 'plant_table';

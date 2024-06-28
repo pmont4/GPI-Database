@@ -137,7 +137,7 @@ AS
 						END;
 					CLOSE cur_date;
 					DEALLOCATE cur_date;
-					SET @to_return = DATEFROMPARTS(@year, @day, @month);
+					SET @to_return = DATEFROMPARTS(@year, @month, @day);
 				END;
 			ELSE 
 				SET @to_return = GETDATE();
